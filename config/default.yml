@@ -1,7 +1,0 @@
-server:
-  port: 8080
-
-db:
-  username : 'sidetrackmaster'
-  password : 'sidetrack0131'
-  database : 'vflo'

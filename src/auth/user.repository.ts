@@ -1,4 +1,5 @@
 import { InternalServerErrorException } from "@nestjs/common";
+import { ResponseDto } from "src/dto/response.dto";
 import { EntityRepository, Repository } from "typeorm";
 import { User } from "./entities/user.entity";
 
@@ -11,13 +12,10 @@ export class UserRepository extends Repository<User> {
 
     const user = this.create({email:email, password:password});
 
-    console.log("user", user)
-
     try {
       await this.save(user);
     } catch(err) {
 
-      console.log(err)
       throw new InternalServerErrorException('Internal Server Error is occured. Plz contact administartor.')
     }
   }

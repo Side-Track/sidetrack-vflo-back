@@ -8,6 +8,12 @@ export class AuthController {
 
   constructor(private authService: AuthService) {}
 
+  // 추후 라우터 이름 변경 가능
+  @Get('/sendverifmail')
+  sendverfmail(@Body('email') email: string): Promise<ResponseDto> {
+    return this.authService.sendVerificationMail(email);
+  }
+
   @Post('/signup')
   signUp(@Body('email') email: string, @Body ('password') password: string): Promise<ResponseDto> {
 

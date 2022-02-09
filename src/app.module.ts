@@ -1,3 +1,4 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -16,7 +17,12 @@ import { ConfigurationModule } from './configuration/configuration.module';
       database: process.env.DB_NAME,
       entities : [__dirname + '/**/*.entity.{js,ts}'],
       synchronize: process.env.DB_SYNC === 'true'
-
+    }),
+    MailerModule.forRoot({
+      transport: 'smtp://' + process.env.EMAIL_HOST + ':' + process.env.EMAIL_HOST_PASSWORD +'@smtp.gmail.com',
+      defaults: {
+        from: '"no-reply" <' + process.env.EMAIL_HOST +'>',
+      }
     }),
     AuthModule,
     ConfigurationModule

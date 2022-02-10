@@ -39,6 +39,11 @@ export class AuthController {
     return this.authService.verifyEmail(emailVerificationDto);
   }
 
+  @Get("/checkemail")
+  checkEmail() {
+    
+  }
+
   @Get('/test')
   @UseGuards(AuthGuard())
   test(@Req() req) {

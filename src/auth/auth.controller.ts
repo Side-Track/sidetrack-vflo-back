@@ -39,6 +39,7 @@ export class AuthController {
     return this.authService.verifyEmail(emailVerificationDto);
   }
 
+  // 이메일 중복검사
   @Get("/checkemail")
   checkEmail(@Body('email') email: string): Promise<ResponseDto> {
     return this.authService.checkDuplicateEmail(email);

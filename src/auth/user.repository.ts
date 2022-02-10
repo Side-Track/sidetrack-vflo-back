@@ -1,6 +1,7 @@
-import { InternalServerErrorException } from "@nestjs/common";
+import { ConflictException, InternalServerErrorException } from "@nestjs/common";
 import { ResponseDto } from "src/dto/response.dto";
 import { EntityRepository, Repository } from "typeorm";
+import { UserCredentialDto } from "./dto/user-credential.dto";
 import { User } from "./entities/user.entity";
 
 
@@ -8,13 +9,18 @@ import { User } from "./entities/user.entity";
 export class UserRepository extends Repository<User> {
 
   // 유저 생성
-  async createUser(email: string, password: string): Promise<void> {
+  async createUser(userCredentialDto: UserCredentialDto): Promise<void> {
 
+    const {email, password} = userCredentialDto
     const user = this.create({email:email, password:password});
 
     try {
       await this.save(user);
     } catch(err) {
+
+      if(err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException('Already existing user name');
+      }
 
       throw new InternalServerErrorException('Internal Server Error is occured. Plz contact administartor.')
     }

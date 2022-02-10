@@ -39,6 +39,11 @@ export class AuthController {
     return this.authService.verifyEmail(emailVerificationDto);
   }
 
+  @Get("/checkemail")
+  checkEmail(@Body('email') email: string): Promise<ResponseDto> {
+    return this.authService.checkDuplicateEmail(email);
+  }
+
   @Get('/test')
   @UseGuards(AuthGuard())
   test(@Req() req) {

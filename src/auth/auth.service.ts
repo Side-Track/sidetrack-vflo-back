@@ -1,5 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from './dto/user-credential.dto';
@@ -10,6 +10,9 @@ import { UserRepository } from './user.repository';
 import constant from 'src/response.constant';
 import { EmailVerificationDto } from './dto/email-verification.dto';
 
+import * as bcrypt from 'bcryptjs'
+import { JwtService } from '@nestjs/jwt';
+
 @Injectable()
 export class AuthService {
 
@@ -17,7 +20,8 @@ export class AuthService {
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
     private emailVerficiationRepository: EmailVerificationRepository,
-    private readonly mailerService: MailerService
+    private readonly mailerService: MailerService,
+    private jwtService: JwtService
   ) {}
 
   // 회원 가입
@@ -31,11 +35,29 @@ export class AuthService {
   // 로그인
   async signIn(userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
 
+    // DTO 로 부터 데이터 받음
     const {email, password} = userCredentialDto;
+
+    // 받은 데이터 기준으로 db 검색
     const user = await this.userRepository.findOne({email:email});
 
-    if(password === user.password) {
-      return new ResponseDto(constant.HttpStatus.OK, "sign-in success!", undefined);
+
+    // 요청으로부터 온 비밀번호와 암호화 된 비밀번호 검사
+    const passwordCompareResult = await bcrypt.compare(password, user.password);
+    if(user != undefined && passwordCompareResult) {
+
+      // 유저 토큰 생성
+      const {idx, email, email_verified} = user
+      const payload = {
+        idx: idx,
+        email: email,
+        email_verified: email_verified
+      }
+      const accessToken = await this.jwtService.sign(payload);
+
+      return new ResponseDto(constant.HttpStatus.OK, 'Sign-in success!', {accessToken});
+    } else {
+      throw new UnauthorizedException('Sign-in Failed')
     }
   }
 
@@ -43,9 +65,9 @@ export class AuthService {
   async sendVerificationMail(email: string):Promise<ResponseDto> {
 
     const user = await this.userRepository.findOne({email: email});
-
+    
     // 이미 인증된 유저라면 패스
-    if(!user.email_verified) {
+    if(user.email_verified) {
       return new ResponseDto(constant.HttpStatus.OK, 'Already verified account.', {verified: user.email_verified});
     }
 

@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { AuthService } from './auth.service';
 import { EmailVerificationDto } from './dto/email-verification.dto';
@@ -39,7 +40,10 @@ export class AuthController {
   }
 
   @Get('/test')
-  test(): Promise<ResponseDto> {
+  @UseGuards(AuthGuard())
+  test(@Req() req) {
+    console.log(req)
     return this.authService.getAllUsers();
   }
 }
+

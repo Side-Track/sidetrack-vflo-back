@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { AuthService } from './auth.service';
 import { EmailVerificationDto } from './dto/email-verification.dto';
@@ -18,6 +19,13 @@ export class AuthController {
     return this.authService.signUp(userCredentialDto);
   }
 
+  // 로그인
+  @Get('/signin')
+  @UsePipes(ValidationPipe)
+  signIn(@Body() userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+    return this.authService.signIn(userCredentialDto);
+  }
+
   // 이메일 인증메일 보내기
   @Get('/sendverifmail')
   sendverfmail(@Body('email') email: string): Promise<ResponseDto> {
@@ -32,7 +40,10 @@ export class AuthController {
   }
 
   @Get('/test')
-  test(): Promise<ResponseDto> {
+  @UseGuards(AuthGuard())
+  test(@Req() req) {
+    console.log(req)
     return this.authService.getAllUsers();
   }
 }
+

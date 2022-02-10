@@ -16,8 +16,15 @@ export class EmailVerification extends BaseEntity {
 
 	@Column({
 		type: 'datetime',
+		nullable: false,
+		default : null
+	})
+	expired_date: Date;
+
+	@Column({
+		type: 'datetime',
 		nullable: true,
 		default: null,
 	})
-	deleted_date: Date;
+	verified_date: Date;
 }

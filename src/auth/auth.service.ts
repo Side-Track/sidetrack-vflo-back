@@ -7,7 +7,7 @@ import { EmailVerificationRepository } from './email_verification.repository';
 import { User } from './entities/user.entity';
 import { UserRepository } from './user.repository';
 
-import constant from 'src/constant';
+import constant from 'src/response.constant';
 import { EmailVerificationDto } from './dto/email-verification.dto';
 
 @Injectable()

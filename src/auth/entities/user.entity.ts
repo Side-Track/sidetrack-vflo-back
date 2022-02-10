@@ -13,6 +13,12 @@ export class User extends BaseEntity {
   @Column()
   password: string;
 
+  @Column({
+    type: 'boolean',
+    default : false
+  })
+  email_verified: Boolean
+
   @CreateDateColumn()
   created_date: Date
 

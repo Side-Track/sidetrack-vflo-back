@@ -7,6 +7,9 @@ import { EmailVerificationRepository } from './email_verification.repository';
 import { User } from './entities/user.entity';
 import { UserRepository } from './user.repository';
 
+import constant from 'src/constant';
+import { EmailVerificationDto } from './dto/email-verification.dto';
+
 @Injectable()
 export class AuthService {
 
@@ -22,8 +25,7 @@ export class AuthService {
 
     await this.userRepository.createUser(userCredentialDto);
 
-    let response = new ResponseDto(200, undefined, undefined); 
-    return response;
+    return new ResponseDto(constant.HttpStatus.OK, undefined, undefined);
   }
 
   // 인증 메일 발송
@@ -33,14 +35,14 @@ export class AuthService {
 
     // 이미 인증된 유저라면 패스
     if(!user.email_verified) {
-      return new ResponseDto(200, 'Already verified account.', {verified: user.email_verified});
+      return new ResponseDto(constant.HttpStatus.OK, 'Already verified account.', {verified: user.email_verified});
     }
 
     // 코드를 생성함
-    let verificationCode = await this.emailVerficiationRepository.createVerificationCode(email);
+    const verificationCode = await this.emailVerficiationRepository.createVerificationCode(email);
 
     // 이메일 내용 작성
-    let sendedMail = await this.mailerService
+    const sendedMail = await this.mailerService
         .sendMail({
           to: email, // list of receivers
           from: process.env.EMAIL_HOST, // sender address
@@ -50,22 +52,23 @@ export class AuthService {
         });
     
     // 메일전송 응답객체의 응답문
-    let sendedMailResponse = sendedMail.response;
+    const sendedMailResponse = sendedMail.response;
 
     // 메일전송성공 대상 이메일 
-    let sendedMailReceiver = sendedMail.accepted[0]; 
+    const sendedMailReceiver = sendedMail.accepted[0]; 
 
     // 메일 발송 완료 되었다면
     if(sendedMailResponse.search('OK') && sendedMailReceiver === email) {
-      return new ResponseDto(200, 'Email-verification code is generated', undefined);
+      return new ResponseDto(constant.HttpStatus.OK, 'Email-verification code is generated', undefined);
     }
   }
 
   // 이메일 인증
-  async verifyEmail(email:string, code:string): Promise<ResponseDto> {
+  async verifyEmail(emailVerificationDto: EmailVerificationDto): Promise<ResponseDto> {
 
     // 이메일 인증하기
-    let verified = await this.emailVerficiationRepository.verifyEmail(email, code);
+    const verified = await this.emailVerficiationRepository.verifyEmail(emailVerificationDto);
+    const {email} = emailVerificationDto;
 
     // 인증 성공
     if(verified) {
@@ -75,19 +78,19 @@ export class AuthService {
         user.email_verified = true;
         await this.userRepository.save(user);
 
-        return new ResponseDto(200, 'Email is verfied', {verified: verified});
+        return new ResponseDto(constant.HttpStatus.OK, 'Email is verfied', {verified: verified});
       }
     } else {
       // 만약 인증 실패라면
-      return new ResponseDto(200, "Can't find any matchs with email, code pair", {verified: verified});
+      return new ResponseDto(constant.HttpStatus.OK, "Can't find any matchs with email, code pair", {verified: verified});
     }
   }
 
   
 
   async getAllUsers(): Promise<ResponseDto> {
-    let userList:User[] = await this.userRepository.selectAllUsers();
-    let response = new ResponseDto(200, undefined, { list:userList }) 
-    return response;
+    const userList:User[] = await this.userRepository.selectAllUsers();
+    return new ResponseDto(constant.HttpStatus.OK, undefined, { list:userList }) 
+  
   }
 }

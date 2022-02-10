@@ -2,6 +2,10 @@ import { InternalServerErrorException, Logger, NotFoundException } from "@nestjs
 import { ResponseDto } from "src/dto/response.dto";
 import { EntityRepository, Repository } from "typeorm";
 import { EmailVerification } from "./entities/email_verification.entity";
+import { EmailVerificationDto } from "./dto/email-verification.dto";
+import constant from 'src/constant';
+import authPolicy from "./auth.policy";
+
 
 @EntityRepository(EmailVerification)
 export class EmailVerificationRepository extends Repository<EmailVerification> {
@@ -13,14 +17,14 @@ export class EmailVerificationRepository extends Repository<EmailVerification> {
     let code = '';
 
     // 코드 최소 길이는 6자
-    while(code.length < 6) {
+    while(code.length < authPolicy.EmailVerificationCodeLength) {
       code = Math.random().toString(36).slice(2);
     }
 
     // 유효 기간 설정 후 DB 에 insert
     let expiredDate = new Date();
-    expiredDate.setMinutes(expiredDate.getMinutes() + 10);
-    let emailVerificationTuple = this.create({email: email, verification_code: code, expired_date: expiredDate});
+    expiredDate.setMinutes(expiredDate.getMinutes() + authPolicy.EmailVerificationExpiredTime);
+    const emailVerificationTuple = this.create({email: email, verification_code: code, expired_date: expiredDate});
 
     try {
       await this.save(emailVerificationTuple);
@@ -32,7 +36,9 @@ export class EmailVerificationRepository extends Repository<EmailVerification> {
   }
 
   // 이메일 인증하기
-  async verifyEmail(email:string, code:string): Promise<boolean> {
+  async verifyEmail(emailVerificationDto: EmailVerificationDto): Promise<boolean> {
+
+    const {email, code} = emailVerificationDto
 
     // 이메일과 생성된 코드로 검색
     const query = this.createQueryBuilder('email_verification');

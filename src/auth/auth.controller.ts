@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { AuthService } from './auth.service';
+import { EmailVerificationDto } from './dto/email-verification.dto';
 import { UserCredentialDto } from './dto/user-credential.dto';
 import { User } from './entities/user.entity';
 
@@ -25,8 +26,9 @@ export class AuthController {
 
   // 이메일 인증
   @Get('/verifyemail')
-  verifyemail(@Body('email') email: string, @Body('code') code: string): Promise<ResponseDto> {
-    return this.authService.verifyEmail(email, code);
+  @UsePipes(ValidationPipe)
+  verifyemail(@Body() emailVerificationDto: EmailVerificationDto): Promise<ResponseDto> {
+    return this.authService.verifyEmail(emailVerificationDto);
   }
 
   @Get('/test')

@@ -18,6 +18,13 @@ export class AuthController {
     return this.authService.signUp(userCredentialDto);
   }
 
+  // 로그인
+  @Get('/signin')
+  @UsePipes(ValidationPipe)
+  signIn(@Body() userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+    return this.authService.signIn(userCredentialDto);
+  }
+
   // 이메일 인증메일 보내기
   @Get('/sendverifmail')
   sendverfmail(@Body('email') email: string): Promise<ResponseDto> {

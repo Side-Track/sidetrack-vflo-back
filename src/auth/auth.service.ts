@@ -28,6 +28,17 @@ export class AuthService {
     return new ResponseDto(constant.HttpStatus.OK, undefined, undefined);
   }
 
+  // 로그인
+  async signIn(userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+
+    const {email, password} = userCredentialDto;
+    const user = await this.userRepository.findOne({email:email});
+
+    if(password === user.password) {
+      return new ResponseDto(constant.HttpStatus.OK, "sign-in success!", undefined);
+    }
+  }
+
   // 인증 메일 발송
   async sendVerificationMail(email: string):Promise<ResponseDto> {
 

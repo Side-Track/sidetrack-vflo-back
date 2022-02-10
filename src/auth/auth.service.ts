@@ -119,6 +119,20 @@ export class AuthService {
     }
   }
 
+
+  // 중복 이메일 검사
+  async checkDuplicateEmail(email: string) : Promise<ResponseDto> {
+
+    const user = await this.userRepository.count({email});
+
+    if(user == 0) {
+      return new ResponseDto(constant.HttpStatus.OK, "Sign up available", {available: true});
+    }
+
+    return new ResponseDto(constant.HttpStatus.OK, "Duplicate User exist", {available: false});
+    
+  }
+
   
 
   async getAllUsers(): Promise<ResponseDto> {

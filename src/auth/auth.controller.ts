@@ -40,8 +40,8 @@ export class AuthController {
   }
 
   @Get("/checkemail")
-  checkEmail() {
-    
+  checkEmail(@Body('email') email: string): Promise<ResponseDto> {
+    return this.authService.checkDuplicateEmail(email);
   }
 
   @Get('/test')

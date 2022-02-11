@@ -27,7 +27,7 @@ import { UserRepository } from './user.repository';
     PassportModule.register({defaultStrategy: 'jwt'})
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [JwtStrategy, PassportModule]
+  providers: [AuthService, JwtStrategy, UserRepository],
+  exports: [JwtStrategy, PassportModule, UserRepository]
 })
 export class AuthModule {}

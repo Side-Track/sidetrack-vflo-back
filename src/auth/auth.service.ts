@@ -1,5 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from './dto/user-credential.dto';
@@ -131,6 +131,44 @@ export class AuthService {
 
     return new ResponseDto(constant.HttpStatus.OK, "Duplicate User exist", {available: false});
     
+  }
+
+
+  // 비밀번호 리셋
+  async resetPassword(email: string): Promise<ResponseDto> {
+
+    let user = await this.userRepository.findOne({email});
+
+    // 해당 이메일 계정이 없으면
+    if(user == undefined) {
+      return new ResponseDto(constant.HttpStatus.DATA_NOT_FOUND, "Can't find any account with email", {})
+    }
+
+    // 계정이 있다면
+    const tempPassword = await this.userRepository.createTemporaryPassword(user);
+
+    // 이메일 내용 작성
+    const sendedMail = await this.mailerService
+        .sendMail({
+          to: email, // list of receivers
+          from: process.env.EMAIL_HOST, // sender address
+          subject: '[VFLO] 비밀번호 초기화 ✔', // Subject line
+          text: '인증코드 : ' + tempPassword + '\n임시 비밀번호로 로그인 후 새 비밀번호로 변경하십시오', // plaintext body
+          // html: '<b>welcome</b>', // HTML body content
+        });
+    
+    // 메일전송 응답객체의 응답문
+    const sendedMailResponse = sendedMail.response;
+
+    // 메일전송성공 대상 이메일 
+    const sendedMailReceiver = sendedMail.accepted[0]; 
+
+    // 메일 발송 완료 되었다면
+    if(sendedMailResponse.search('OK') && sendedMailReceiver === email) {
+      return new ResponseDto(constant.HttpStatus.OK, 'Temporary Password is sented.', undefined);
+    } else {
+      throw new InternalServerErrorException(`Password Reset Failed. Internal Server error. Plz contact server admin`);
+    }
   }
 
   

@@ -45,6 +45,12 @@ export class AuthController {
     return this.authService.checkDuplicateEmail(email);
   }
 
+  // 비밀번호 리셋
+  @Get("/resetpassword")
+  resetPassword(@Body('email') email: string): Promise<ResponseDto> {
+    return this.authService.resetPassword(email);
+  }
+
   @Get('/test')
   @UseGuards(AuthGuard())
   test(@Req() req) {

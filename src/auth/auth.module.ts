@@ -22,7 +22,6 @@ import { UserRepository } from './user.repository';
           expiresIn: 60 * 60
         }
       })
-      
     }),
     PassportModule.register({defaultStrategy: 'jwt'})
   ],

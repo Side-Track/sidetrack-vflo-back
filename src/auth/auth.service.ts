@@ -52,6 +52,7 @@ export class AuthService {
 			});
 		}
 
+
 		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ALREADY_REGISTERED_USER, true, 'Duplicate User exist', {
 			available: false,
 		});
@@ -116,7 +117,6 @@ export class AuthService {
 			// verified_date update
 			verifyObject.verified_date = new Date();
 			await this.emailVerficiationRepository.save(verifyObject);
-
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'email is verified!');
 		} else {
 			// 검색 결과 없으면
@@ -124,7 +124,7 @@ export class AuthService {
 				Constant.HttpStatus.OK,
 				ResponseCode.DATA_NOT_FOUND,
 				false,
-				"Can't find any matchs with email, code data",
+				"Can't find any matchs with email, code data"
 			);
 		}
 	}
@@ -225,6 +225,7 @@ export class AuthService {
 
 		// 메일 발송 완료 되었다면
 		if (sendedMailResponse.search('OK') && sendedMailReceiver === email) {
+
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Temporary Password is sented.');
 		} else {
 			throw new InternalServerErrorException(`Password Reset Failed. Internal Server error. Plz contact server admin`);

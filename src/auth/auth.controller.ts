@@ -8,54 +8,51 @@ import { User } from './entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
+	constructor(private authService: AuthService) {}
 
-  constructor(private authService: AuthService) {}
+	// 회원 가입
+	@Post('/signup')
+	@UsePipes(ValidationPipe)
+	signUp(@Body() userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+		return this.authService.signUp(userCredentialDto);
+	}
 
-  // 회원 가입
-  @Post('/signup')
-  @UsePipes(ValidationPipe)
-  signUp(@Body() userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+	// 로그인
+	@Get('/signin')
+	@UsePipes(ValidationPipe)
+	signIn(@Body() userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+		return this.authService.signIn(userCredentialDto);
+	}
 
-    return this.authService.signUp(userCredentialDto);
-  }
+	// 이메일 인증메일 보내기
+	@Get('/sendverifmail')
+	sendverfmail(@Body('email') email: string): Promise<ResponseDto> {
+		return this.authService.sendVerificationMail(email);
+	}
 
-  // 로그인
-  @Get('/signin')
-  @UsePipes(ValidationPipe)
-  signIn(@Body() userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
-    return this.authService.signIn(userCredentialDto);
-  }
+	// 이메일 인증
+	@Get('/verifyemail')
+	@UsePipes(ValidationPipe)
+	verifyemail(@Body() emailVerificationDto: EmailVerificationDto): Promise<ResponseDto> {
+		return this.authService.verifyEmail(emailVerificationDto);
+	}
 
-  // 이메일 인증메일 보내기
-  @Get('/sendverifmail')
-  sendverfmail(@Body('email') email: string): Promise<ResponseDto> {
-    return this.authService.sendVerificationMail(email);
-  }
+	// 이메일 중복검사
+	@Get('/checkemail')
+	checkEmail(@Body('email') email: string): Promise<ResponseDto> {
+		return this.authService.checkDuplicateEmail(email);
+	}
 
-  // 이메일 인증
-  @Get('/verifyemail')
-  @UsePipes(ValidationPipe)
-  verifyemail(@Body() emailVerificationDto: EmailVerificationDto): Promise<ResponseDto> {
-    return this.authService.verifyEmail(emailVerificationDto);
-  }
+	// 비밀번호 리셋
+	@Get('/reset_password')
+	resetPassword(@Body('email') email: string): Promise<ResponseDto> {
+		return this.authService.resetPassword(email);
+	}
 
-  // 이메일 중복검사
-  @Get("/checkemail")
-  checkEmail(@Body('email') email: string): Promise<ResponseDto> {
-    return this.authService.checkDuplicateEmail(email);
-  }
-
-  // 비밀번호 리셋
-  @Get("/resetpassword")
-  resetPassword(@Body('email') email: string): Promise<ResponseDto> {
-    return this.authService.resetPassword(email);
-  }
-
-  @Get('/test')
-  @UseGuards(AuthGuard())
-  test(@Req() req) {
-    console.log(req)
-    return this.authService.getAllUsers();
-  }
+	@Get('/test')
+	@UseGuards(AuthGuard())
+	test(@Req() req) {
+		console.log(req);
+		return this.authService.getAllUsers();
+	}
 }
-

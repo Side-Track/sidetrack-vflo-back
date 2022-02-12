@@ -172,11 +172,12 @@ export class AuthService {
 
 		if (passwordCompareResult) {
 			// 유저 토큰 생성
-			const { idx, email, email_verified } = user;
+			const { idx, email, email_verified, is_admin } = user;
 			const payload = {
 				idx: idx,
 				email: email,
-				email_verified: email_verified,
+				emailVerified: email_verified,
+				isAdmin: is_admin,
 			};
 			const accessToken = await this.jwtService.sign(payload);
 

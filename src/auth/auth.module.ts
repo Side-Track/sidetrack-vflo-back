@@ -3,6 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProfileModule } from 'src/profile/profile.module';
+import { ProfileRepository } from 'src/profile/profile.repository';
+import { ProfileService } from 'src/profile/profile.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { EmailVerificationRepository } from './email_verification.repository';
@@ -26,7 +29,7 @@ import { UserRepository } from './user.repository';
 		PassportModule.register({ defaultStrategy: 'jwt' }),
 	],
 	controllers: [AuthController],
-	providers: [AuthService, JwtStrategy, UserRepository],
-	exports: [JwtStrategy, PassportModule, UserRepository],
+	providers: [JwtStrategy, UserRepository, AuthService],
+	exports: [JwtStrategy, UserRepository, PassportModule],
 })
 export class AuthModule {}

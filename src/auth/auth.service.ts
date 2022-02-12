@@ -15,6 +15,10 @@ import { JwtService } from '@nestjs/jwt';
 import { ResponseCode } from 'src/response.code.enum';
 import { EmailVerification } from './entities/email_verification.entity';
 import { Connection } from 'typeorm';
+import { ProfileService } from 'src/profile/profile.service';
+import { ProfileDto } from 'src/profile/dto/profile.dto';
+import { ProfileRepository } from 'src/profile/profile.repository';
+import { Profile } from 'src/profile/entities/profile.entity';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +26,7 @@ export class AuthService {
 	// Solve : @InjectionRepository() 대신 커넥션을 이용해서 다음과 같이 정의하는 방법을 사용함.
 	private userRepository: UserRepository;
 	private emailVerficiationRepository: EmailVerificationRepository;
+	private profileRepository: ProfileRepository;
 	constructor(
 		private readonly connection: Connection,
 		private readonly mailerService: MailerService,
@@ -29,6 +34,7 @@ export class AuthService {
 	) {
 		this.userRepository = this.connection.getCustomRepository(UserRepository);
 		this.emailVerficiationRepository = this.connection.getCustomRepository(EmailVerificationRepository);
+		this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
 	}
 
 	/* constructor(
@@ -150,7 +156,15 @@ export class AuthService {
 			return new ResponseDto(constant.HttpStatus.OK, ResponseCode.ETC, true, 'unspecific error occured.');
 		}
 
-		// 성공 시
+		// 성공 시 프로필 자동생성
+		const profile: Profile = await this.profileRepository.createProfile(user, new ProfileDto());
+
+		// 프로필 자동생성이 모종의 이유로 실패 시
+		if (!profile) {
+			return new ResponseDto(constant.HttpStatus.OK, ResponseCode.ETC, true, 'unspecific error occured.');
+		}
+
+		// 최종적으로 성공
 		return new ResponseDto(constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Sign-up success!');
 	}
 
@@ -174,7 +188,7 @@ export class AuthService {
 			// 유저 토큰 생성
 			const { idx, email, email_verified, is_admin } = user;
 			const payload = {
-				idx: idx,
+				userIdx: idx,
 				email: email,
 				emailVerified: email_verified,
 				isAdmin: is_admin,

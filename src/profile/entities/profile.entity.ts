@@ -14,7 +14,9 @@ export class Profile extends BaseEntity {
 	@Column()
 	nickname: string;
 
-	@Column()
+	@Column({
+		default: null,
+	})
 	bio: string;
 
 	// 장르 추가

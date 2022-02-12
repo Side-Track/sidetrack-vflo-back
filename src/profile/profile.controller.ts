@@ -14,7 +14,7 @@ export class ProfileController {
 	@Post('/create_profile')
 	createProfile(@Req() req, @Body() profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx
-		const requsetUserIdx = req.user.userIdx;
+		const requsetUserIdx = req.user.idx;
 		return this.profileService.createProfile(requsetUserIdx, profileDto);
 	}
 
@@ -22,8 +22,6 @@ export class ProfileController {
 	updateProfile(@Req() req, @Body() profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx
 		const requsetUserIdx = req.user.idx;
-
-		console.log(req.user);
 		return this.profileService.updateProfile(requsetUserIdx, profileDto);
 	}
 }

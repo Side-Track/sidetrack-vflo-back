@@ -28,6 +28,7 @@ export class ProfileService {
 	// 	private profileRepository: ProfileRepository,
 	// ) {}
 
+	// 프로필 생성
 	async createProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
 		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
@@ -49,6 +50,7 @@ export class ProfileService {
 		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is created!', { profile });
 	}
 
+	// 프로필 업데이트
 	async updateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		console.log(requsetUserIdx);
 

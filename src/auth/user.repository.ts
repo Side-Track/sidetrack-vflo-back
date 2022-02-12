@@ -4,6 +4,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { UserCredentialDto } from './dto/user-credential.dto';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcryptjs';
+import authPolicy from './auth.policy';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -31,8 +32,8 @@ export class UserRepository extends Repository<User> {
 		// 임시비밀번호 생성
 		let password = '';
 
-		// 임시 비밀번호 최소 길이는 6자
-		while (password.length < 6) {
+		// 임시 비밀번호 최소 길이는 8자
+		while (password.length < authPolicy.TemporaryPasswordLength) {
 			password = Math.random().toString(36).slice(2);
 		}
 

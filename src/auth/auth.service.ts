@@ -14,24 +14,39 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ResponseCode } from 'src/response.code.enum';
 import { EmailVerification } from './entities/email_verification.entity';
+import { Connection } from 'typeorm';
 
 @Injectable()
 export class AuthService {
+	// Cause : any method in repository occur 500 internal error.
+	// Solve : @InjectionRepository() 대신 커넥션을 이용해서 다음과 같이 정의하는 방법을 사용함.
+	private userRepository: UserRepository;
+	private emailVerficiationRepository: EmailVerificationRepository;
 	constructor(
-		@InjectRepository(UserRepository)
-		private userRepository: UserRepository,
-
-		@InjectRepository(EmailVerificationRepository)
-		private emailVerficiationRepository: EmailVerificationRepository,
+		private readonly connection: Connection,
 		private readonly mailerService: MailerService,
 		private jwtService: JwtService,
-	) {}
+	) {
+		this.userRepository = this.connection.getCustomRepository(UserRepository);
+		this.emailVerficiationRepository = this.connection.getCustomRepository(EmailVerificationRepository);
+	}
+
+	/* constructor(
+	// 	@InjectRepository(UserRepository)
+	// 	private userRepository: UserRepository,
+
+	// 	@InjectRepository(EmailVerificationRepository)
+	// 	private emailVerficiationRepository: EmailVerificationRepository,
+	//  private readonly mailerService: MailerService,
+	//	private jwtService: JwtService,
+	// ) {}
+	*/
 
 	// 중복 이메일 검사
 	async checkDuplicateEmail(email: string): Promise<ResponseDto> {
-		const user = await this.userRepository.findOne({ email });
+		const count = await this.userRepository.count({ email });
 
-		if (user) {
+		if (count == 0) {
 			return new ResponseDto(constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Sign up available', {
 				available: true,
 			});

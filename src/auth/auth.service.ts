@@ -41,10 +41,16 @@ export class AuthService {
     // 받은 데이터 기준으로 db 검색
     const user = await this.userRepository.findOne({email:email});
 
+    // user 존재 검사
+    if(!user) {
+      throw new UnauthorizedException('Sign-in Failed')
+    }
 
     // 요청으로부터 온 비밀번호와 암호화 된 비밀번호 검사
     const passwordCompareResult = await bcrypt.compare(password, user.password);
-    if(user != undefined && passwordCompareResult) {
+
+    // 비밀번호 정확하다면
+    if(passwordCompareResult) {
 
       // 유저 토큰 생성
       const {idx, email, email_verified} = user
@@ -54,9 +60,10 @@ export class AuthService {
         email_verified: email_verified
       }
       const accessToken = await this.jwtService.sign(payload);
+      return new ResponseDto(constant.HttpStatus.OK, 'Sign-in success!', {accessToken, email_verified});
 
-      return new ResponseDto(constant.HttpStatus.OK, 'Sign-in success!', {accessToken});
     } else {
+
       throw new UnauthorizedException('Sign-in Failed')
     }
   }

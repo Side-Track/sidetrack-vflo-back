@@ -1,6 +1,6 @@
 export default {
-  HttpStatus : {
-    OK : 200,
-    DATA_NOT_FOUND: 204
-  }
+	HttpStatus: {
+		OK: 200,
+		DATA_NOT_FOUND: 204,
+	},
 };

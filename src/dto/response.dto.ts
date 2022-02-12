@@ -5,10 +5,12 @@ export class ResponseDto {
 	error: boolean;
 	code: string;
 
-	constructor(status: number, message: string, data: object) {
+	constructor(status: number, code: string, error: boolean, message?: string, data?: object) {
 		this.status = status;
-		this.message = message;
-		this.data = data;
+		this.code = code;
+		this.error = error;
+		this.message = message || '';
+		this.data = data || undefined;
 	}
 
 	setStatus(status: number): void {

@@ -19,7 +19,7 @@ import { UserRepository } from './user.repository';
 			useFactory: (config: ConfigService) => ({
 				secret: config.get<string>('JWT_SECRET'),
 				signOptions: {
-					expiresIn: 60 * 60,
+					expiresIn: '14d',
 				},
 			}),
 		}),

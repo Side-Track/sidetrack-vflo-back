@@ -3,7 +3,6 @@ import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, IsNull, Not, Repository } from 'typeorm';
 import { EmailVerification } from './entities/email_verification.entity';
 import { EmailVerificationDto } from './dto/email-verification.dto';
-import constant from 'src/response.constant';
 import authPolicy from './auth.policy';
 
 @EntityRepository(EmailVerification)

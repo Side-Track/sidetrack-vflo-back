@@ -128,7 +128,7 @@ export class AuthService {
 				Constant.HttpStatus.OK,
 				ResponseCode.DATA_NOT_FOUND,
 				false,
-				"Can't find any matchs with email, code data"
+				"Can't find any matchs with email, code data",
 			);
 		}
 	}
@@ -151,7 +151,19 @@ export class AuthService {
 
 		// 유저 만들기가 모종의 이유로 실패 시
 		if (!user) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ETC, true, 'unspecific error occured.');
+			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ETC, true, 'createUser - unspecific error occured.');
+		}
+
+		const profile = await this.profileRepository.createProfile(user, new ProfileDto());
+
+		// 프로필 자동생성이 모종의 이유로 실패 시
+		if (!profile) {
+			return new ResponseDto(
+				Constant.HttpStatus.OK,
+				ResponseCode.ETC,
+				true,
+				'createProfile - unspecific error occured.',
+			);
 		}
 
 		// 성공 시
@@ -166,13 +178,13 @@ export class AuthService {
 		// 받은 데이터 기준으로 db 검색
 		const user = await this.userRepository.findOne({ email: email });
 
-		// 요청으로부터 온 비밀번호와 암호화 된 비밀번호 검사
-		const passwordCompareResult = await bcrypt.compare(password, user.password);
-
 		// 존재하지 않는 유저일경우
 		if (!user) {
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed');
 		}
+
+		// 요청으로부터 온 비밀번호와 암호화 된 비밀번호 검사
+		const passwordCompareResult = await bcrypt.compare(password, user.password);
 
 		if (passwordCompareResult) {
 			// 유저 토큰 생성

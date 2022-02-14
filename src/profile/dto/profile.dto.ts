@@ -6,6 +6,7 @@ export class ProfileDto {
 	userIdx: number;
 
 	@MaxLength(10)
+	@IsNotEmpty()
 	nickname: string;
 
 	@MaxLength(150)

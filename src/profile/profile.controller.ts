@@ -12,6 +12,11 @@ import GlobalPipes from '../pipes/global-pipes.pipe';
 export class ProfileController {
 	constructor(private profileService: ProfileService) {}
 
+	@Get('/check_nickname')
+	checkNickname(@Body('nickname') nickname: string, @Body('recommend') recommend: boolean): Promise<ResponseDto> {
+		return this.profileService.checkDuplicateNickname(nickname, recommend);
+	}
+
 	@Post('/create_profile')
 	@UsePipes(ValidationPipe)
 	createProfile(@Req() req, @Body() profileDto: ProfileDto): Promise<ResponseDto> {

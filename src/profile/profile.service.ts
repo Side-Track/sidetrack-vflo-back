@@ -30,6 +30,12 @@ export class ProfileService {
 
 	// 닉네임 중복체크
 	async checkDuplicateNickname(nickname: string, recommend: boolean): Promise<ResponseDto> {
+		// 닉네임이 빈 문자열인지 체크
+		if (nickname.length == 0 || !nickname || nickname.replace(/\s/g, '') == '') {
+			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, true, 'nickname is empty string.');
+		}
+
+		// similar 로 찾는 이유 : 추천기능이 입력한 닉네임 베이스로 생성하므로 LIKE 검색으로 입력한 닉네임이 포함된 모든 닉네임을 검색함.
 		const existNicknameObj = await this.profileRepository.searchSimilarNickname(nickname);
 		let responseData = {};
 

@@ -10,6 +10,26 @@ import { ResponseCode } from 'src/response.code.enum';
 
 @EntityRepository(Profile)
 export class ProfileRepository extends Repository<Profile> {
+	async searchSimilarNickname(nickname: string): Promise<object> {
+		const query = this.createQueryBuilder('profile')
+			.select('profile.nickname')
+			.where('profile.nickname LIKE :nickname', { nickname: `%${nickname}%` });
+
+		const existNicknameList = await query.getRawMany();
+
+		const existNicknameObj = {};
+
+		if (existNicknameList.length > 0) {
+			for (let i in existNicknameList) {
+				const existNickname = existNicknameList[i].profile_nickname;
+
+				existNicknameObj[existNickname] = existNickname;
+			}
+		}
+
+		return existNicknameObj;
+	}
+
 	async createProfile(user: User, profileDto: ProfileDto): Promise<Profile> {
 		let { nickname, bio } = profileDto;
 

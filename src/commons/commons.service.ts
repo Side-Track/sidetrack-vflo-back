@@ -27,3 +27,4 @@ export class CommonsService {
 		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
 	}
 }
+

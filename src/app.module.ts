@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { ProfileModule } from './profile/profile.module';
+import { CommonsModule } from './commons/commons.module';
 
 @Module({
 	imports: [
@@ -28,6 +29,7 @@ import { ProfileModule } from './profile/profile.module';
 		AuthModule,
 		ConfigurationModule,
 		ProfileModule,
+		CommonsModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

@@ -29,18 +29,48 @@ export class ProfileService {
 	// ) {}
 
 	// 닉네임 중복체크
-	async checkDuplicateNickname(nickname: string): Promise<ResponseDto> {
+	async checkDuplicateNickname(nickname: string, recommend: boolean): Promise<ResponseDto> {
 		const existNicknameObj = await this.profileRepository.searchSimilarNickname(nickname);
+		let responseData = {};
 
-		if (existNicknameObj[nickname] == undefined) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is available!', {
-				isUnique: true,
-			});
+		// 추천을 받을 경우
+		if (recommend) {
+			let recommendList = [];
+
+			// 10개 정도 생성(숫자 붙여서)
+			for (let i = 1; i <= 10; i++) {
+				let tempNickname = nickname + Math.floor(Math.random() * 101);
+
+				if (!existNicknameObj[tempNickname] && !recommendList[tempNickname]) {
+					recommendList.push(tempNickname);
+				}
+			}
+
+			responseData['recommendList'] = recommendList;
 		}
 
-		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is unavailable', {
-			isUnique: false,
-		});
+		// 사용가능한 닉네임일 경우
+		if (existNicknameObj[nickname] == undefined) {
+			responseData['isUnique'] = true;
+
+			return new ResponseDto(
+				Constant.HttpStatus.OK,
+				ResponseCode.SUCCESS,
+				false,
+				'nickname is available!',
+				responseData,
+			);
+		}
+
+		// 사용불가능한 닉네임인 경우
+		responseData['isUnique'] = false;
+		return new ResponseDto(
+			Constant.HttpStatus.OK,
+			ResponseCode.SUCCESS,
+			false,
+			'nickname is unavailable',
+			responseData,
+		);
 	}
 
 	// 프로필 생성

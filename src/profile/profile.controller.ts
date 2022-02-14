@@ -12,8 +12,8 @@ export class ProfileController {
 	constructor(private profileService: ProfileService) {}
 
 	@Get('/check_nickname')
-	checkNickname(@Body('nickname') nickname: string): Promise<ResponseDto> {
-		return this.profileService.checkDuplicateNickname(nickname);
+	checkNickname(@Body('nickname') nickname: string, @Body('recommend') recommend: boolean): Promise<ResponseDto> {
+		return this.profileService.checkDuplicateNickname(nickname, recommend);
 	}
 
 	@Post('/create_profile')

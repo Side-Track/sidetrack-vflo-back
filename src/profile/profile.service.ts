@@ -28,6 +28,21 @@ export class ProfileService {
 	// 	private profileRepository: ProfileRepository,
 	// ) {}
 
+	// 닉네임 중복체크
+	async checkDuplicateNickname(nickname: string): Promise<ResponseDto> {
+		const existNicknameObj = await this.profileRepository.searchSimilarNickname(nickname);
+
+		if (existNicknameObj[nickname] == undefined) {
+			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is available!', {
+				isUnique: true,
+			});
+		}
+
+		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is unavailable', {
+			isUnique: false,
+		});
+	}
+
 	// 프로필 생성
 	async createProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음

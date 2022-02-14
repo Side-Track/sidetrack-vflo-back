@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { ProfileDto } from './dto/profile.dto';
@@ -10,6 +10,11 @@ import { ResponseCode } from 'src/response.code.enum';
 @UseGuards(AuthGuard())
 export class ProfileController {
 	constructor(private profileService: ProfileService) {}
+
+	@Get('/check_nickname')
+	checkNickname(@Body('nickname') nickname: string, @Body('recommend') recommend: boolean): Promise<ResponseDto> {
+		return this.profileService.checkDuplicateNickname(nickname, recommend);
+	}
 
 	@Post('/create_profile')
 	createProfile(@Req() req, @Body() profileDto: ProfileDto): Promise<ResponseDto> {

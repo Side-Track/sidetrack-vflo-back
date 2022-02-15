@@ -2,7 +2,6 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { GenreRepository } from './repositories/genre.repository';
-import Constant from 'src/response.constant';
 import { ResponseCode } from 'src/response.code.enum';
 
 @Injectable()
@@ -24,6 +23,6 @@ export class CommonsService {
 		// 	);
 		// }
 
-		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
 	}
 }

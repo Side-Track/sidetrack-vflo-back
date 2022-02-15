@@ -6,7 +6,6 @@ import { Connection } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';
 import { ProfileRepository } from './profile.repository';
 
-import Constant from 'src/response.constant';
 import { ResponseCode } from 'src/response.code.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -62,24 +61,12 @@ export class ProfileService {
 		if (existNicknameObj[nickname] == undefined) {
 			responseData['isUnique'] = true;
 
-			return new ResponseDto(
-				Constant.HttpStatus.OK,
-				ResponseCode.SUCCESS,
-				false,
-				'nickname is available!',
-				responseData,
-			);
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is available!', responseData);
 		}
 
 		// 사용불가능한 닉네임인 경우
 		responseData['isUnique'] = false;
-		return new ResponseDto(
-			Constant.HttpStatus.OK,
-			ResponseCode.SUCCESS,
-			false,
-			'nickname is unavailable',
-			responseData,
-		);
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is unavailable', responseData);
 	}
 
 	// 프로필 생성
@@ -112,7 +99,7 @@ export class ProfileService {
 		}
 
 		// 프로필 리턴
-		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is created!', { profile });
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is created!', { profile });
 	}
 
 	// 프로필 업데이트

@@ -3,7 +3,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { ProfileDto } from './dto/profile.dto';
 import { ProfileService } from './profile.service';
-import Constant from 'src/response.constant';
 import { ResponseCode } from 'src/response.code.enum';
 import GlobalPipes from '../pipes/global-pipes.pipe';
 

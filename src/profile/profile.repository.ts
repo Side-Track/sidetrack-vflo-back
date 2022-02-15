@@ -4,8 +4,6 @@ import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, Repository } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';
 import { Profile } from './entities/profile.entity';
-
-import Constant from 'src/response.constant';
 import { ResponseCode } from 'src/response.code.enum';
 
 @EntityRepository(Profile)
@@ -85,7 +83,7 @@ export class ProfileRepository extends Repository<Profile> {
 		try {
 			profile = await this.save(profile);
 
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is Updated!', { profile });
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is Updated!', { profile });
 		} catch (err) {
 			throw new HttpException(
 				new ResponseDto(

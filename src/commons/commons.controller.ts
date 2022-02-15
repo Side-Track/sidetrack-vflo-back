@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from 'src/auth/decorators/get-user.decorator';
+import { User } from 'src/auth/entities/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
 import { CommonsService } from './commons.service';
 
@@ -14,7 +16,7 @@ export class CommonsController {
 
 	@Post('/create_genre')
 	@UseGuards(AuthGuard())
-	createGenre(@Req() req, @Body('name') name: string): Promise<ResponseDto> {
-		return this.commonService.createGenre(req, name);
+	createGenre(@GetUser() user: User, @Body('name') name: string): Promise<ResponseDto> {
+		return this.commonService.createGenre(user, name);
 	}
 }

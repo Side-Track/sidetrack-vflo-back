@@ -5,6 +5,7 @@ import { GenreRepository } from './repositories/genre.repository';
 import Constant from 'src/response.constant';
 import { ResponseCode } from 'src/response.code.enum';
 import { GenreDto } from './dto/genre.dto';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class CommonsService {
@@ -28,8 +29,11 @@ export class CommonsService {
 		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
 	}
 
-	async createGenre(req: Request, name: string): Promise<ResponseDto> {
+	async createGenre(user: User, name: string): Promise<ResponseDto> {
 		// 관리자인지 확인
+		if (!user.is_admin) {
+			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.UNAUTHORIZED_USER, true, 'un-authorized user.');
+		}
 
 		// 중복 장르 있는지 확인
 		const existGenre = await this.genreRepository.findOne({ name });

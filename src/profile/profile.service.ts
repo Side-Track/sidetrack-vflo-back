@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { User } from 'src/auth/entities/user.entity';
-import { UserRepository } from 'src/auth/user.repository';
+import { UserRepository } from 'src/auth/repositories/user.repository';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';

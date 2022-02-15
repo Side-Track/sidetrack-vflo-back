@@ -3,9 +3,9 @@ import { Inject, Injectable, InternalServerErrorException, UnauthorizedException
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from './dto/user-credential.dto';
-import { EmailVerificationRepository } from './email_verification.repository';
+import { EmailVerificationRepository } from './repositories/email_verification.repository';
 import { User } from './entities/user.entity';
-import { UserRepository } from './user.repository';
+import { UserRepository } from './repositories/user.repository';
 
 import Constant from 'src/response.constant';
 import { EmailVerificationDto } from './dto/email-verification.dto';

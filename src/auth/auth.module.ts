@@ -8,9 +8,9 @@ import { ProfileRepository } from 'src/profile/profile.repository';
 import { ProfileService } from 'src/profile/profile.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { EmailVerificationRepository } from './email_verification.repository';
+import { EmailVerificationRepository } from './repositories/email_verification.repository';
 import { JwtStrategy } from './jwt.strategy';
-import { UserRepository } from './user.repository';
+import { UserRepository } from './repositories/user.repository';
 
 @Module({
 	imports: [

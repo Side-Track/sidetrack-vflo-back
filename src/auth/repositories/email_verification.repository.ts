@@ -1,9 +1,9 @@
 import { InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, IsNull, Not, Repository } from 'typeorm';
-import { EmailVerification } from './entities/email_verification.entity';
-import { EmailVerificationDto } from './dto/email-verification.dto';
-import authPolicy from './auth.policy';
+import { EmailVerification } from '../entities/email_verification.entity';
+import { EmailVerificationDto } from '../dto/email-verification.dto';
+import authPolicy from '../auth.policy';
 
 @EntityRepository(EmailVerification)
 export class EmailVerificationRepository extends Repository<EmailVerification> {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { GenreRepository } from './repositories/genre.repository';
@@ -14,17 +14,16 @@ export class CommonsService {
 
 	async getAllGenreList() {
 		const list = await this.genreRepository.find();
-
-		if (list.length == 0) {
-			return new ResponseDto(
-				Constant.HttpStatus.DATA_NOT_FOUND,
-				ResponseCode.DATA_NOT_FOUND,
-				true,
-				`Can't find any genre.`,
-			);
-		}
+		// //  장르가 없을 때
+		// if (list.length == 0) {
+		// 	return new ResponseDto(
+		// 		HttpStatus.NO_CONTENT,
+		// 		ResponseCode.DATA_NOT_FOUND,
+		// 		true,
+		// 		`Can't find any genre.`,
+		// 	);
+		// }
 
 		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
 	}
 }
-

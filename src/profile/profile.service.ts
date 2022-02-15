@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { User } from 'src/auth/entities/user.entity';
 import { UserRepository } from 'src/auth/repositories/user.repository';
 import { ResponseDto } from 'src/dto/response.dto';
@@ -32,7 +32,10 @@ export class ProfileService {
 	async checkDuplicateNickname(nickname: string, recommend: boolean): Promise<ResponseDto> {
 		// 닉네임이 빈 문자열인지 체크
 		if (nickname.length == 0 || !nickname || nickname.replace(/\s/g, '') == '') {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, true, 'nickname is empty string.');
+			throw new HttpException(
+				new ResponseDto(HttpStatus.BAD_REQUEST, ResponseCode.ETC, true, 'nickname is empty string.'),
+				HttpStatus.BAD_REQUEST,
+			);
 		}
 
 		// similar 로 찾는 이유 : 추천기능이 입력한 닉네임 베이스로 생성하므로 LIKE 검색으로 입력한 닉네임이 포함된 모든 닉네임을 검색함.
@@ -84,9 +87,12 @@ export class ProfileService {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
 		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
 
-		// 유저 없으면 리턴
+		// 유저 없으면 에러
 		if (!user) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.NOT_REGISTERED_USER, true, 'Cannot find user');
+			throw new HttpException(
+				new ResponseDto(HttpStatus.NOT_FOUND, ResponseCode.NOT_REGISTERED_USER, true, 'Cannot find user'),
+				HttpStatus.NOT_FOUND,
+			);
 		}
 
 		// 프로필 생성
@@ -94,7 +100,15 @@ export class ProfileService {
 
 		// 생성 후 모종의 이유로 없으면 에러던짐
 		if (!profile) {
-			throw new InternalServerErrorException('Internal Server Error is occured. Plz contact administartor.');
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.NOT_FOUND,
+					ResponseCode.NOT_REGISTERED_USER,
+					true,
+					'Internal Server Error is occured. Plz contact administartor.',
+				),
+				HttpStatus.NOT_FOUND,
+			);
 		}
 
 		// 프로필 리턴
@@ -110,7 +124,10 @@ export class ProfileService {
 
 		// 유저 없으면 리턴
 		if (!user) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.NOT_REGISTERED_USER, true, 'Cannot find user');
+			throw new HttpException(
+				new ResponseDto(HttpStatus.NOT_FOUND, ResponseCode.NOT_REGISTERED_USER, true, 'Cannot find user'),
+				HttpStatus.NOT_FOUND,
+			);
 		}
 
 		return await this.profileRepository.updateProfile(user, profileDto);

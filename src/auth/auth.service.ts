@@ -1,5 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from './dto/user-credential.dto';
@@ -57,25 +57,37 @@ export class AuthService {
 				available: true,
 			});
 		}
-		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ALREADY_REGISTERED_USER, true, 'Duplicate User exist', {
-			available: false,
-		});
+
+		const response = new ResponseDto(
+			HttpStatus.FOUND,
+			ResponseCode.ALREADY_REGISTERED_USER,
+			true,
+			'Duplicate User exist',
+			{
+				available: false,
+			},
+		);
+
+		throw new HttpException(response, HttpStatus.FOUND);
 	}
 
 	// 인증 메일 발송
 	async sendVerificationMail(email: string): Promise<ResponseDto> {
 		// 이미 인증받은 유저인지 검사
 		const user = await this.userRepository.findOne({ email: email });
+		const verified = await this.emailVerficiationRepository.findVerifiedEmailVerificationByEmail(email);
 
 		// 이미 인증된 유저라면 response error return
-		if (user && user.email_verified) {
-			return new ResponseDto(
+		if (user && user.email_verified && verified) {
+			const response = new ResponseDto(
 				Constant.HttpStatus.OK,
 				ResponseCode.ALREADY_VERIFIED_ACCOUNT,
 				true,
 				'Already verified account.',
 				{ verified: user.email_verified },
 			);
+
+			throw new HttpException(response, HttpStatus.OK);
 		}
 
 		// 인증 받아야 한다면 : 가입은 되었으나 인증은 안된경우와 처음 인증하고 가입절차 밟는 경우
@@ -124,11 +136,14 @@ export class AuthService {
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'email is verified!');
 		} else {
 			// 검색 결과 없으면
-			return new ResponseDto(
-				Constant.HttpStatus.OK,
-				ResponseCode.DATA_NOT_FOUND,
-				false,
-				"Can't find any matchs with email, code data",
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.NO_CONTENT,
+					ResponseCode.DATA_NOT_FOUND,
+					false,
+					"Can't find any matchs with email, code data",
+				),
+				HttpStatus.NO_CONTENT,
 			);
 		}
 	}
@@ -143,7 +158,10 @@ export class AuthService {
 
 		// 인증받은 이메일이 아니라면(인증받은 이메일-코드 페어가 없으면)
 		if (!verifiedEmail) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.NOT_VERIFIED_EMAIL, true, 'Not Verified Email.');
+			throw new HttpException(
+				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_VERIFIED_EMAIL, true, 'Not Verified Email.'),
+				HttpStatus.UNAUTHORIZED,
+			);
 		}
 
 		// 유저 만들기
@@ -151,18 +169,29 @@ export class AuthService {
 
 		// 유저 만들기가 모종의 이유로 실패 시
 		if (!user) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ETC, true, 'createUser - unspecific error occured.');
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.ETC,
+					true,
+					'createUser - unspecific error occured.',
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const profile = await this.profileRepository.createProfile(user, new ProfileDto());
 
 		// 프로필 자동생성이 모종의 이유로 실패 시
 		if (!profile) {
-			return new ResponseDto(
-				Constant.HttpStatus.OK,
-				ResponseCode.ETC,
-				true,
-				'createProfile - unspecific error occured.',
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.ETC,
+					true,
+					'createProfile - unspecific error occured.',
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
 
@@ -180,7 +209,10 @@ export class AuthService {
 
 		// 존재하지 않는 유저일경우
 		if (!user) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed');
+			throw new HttpException(
+				new ResponseDto(HttpStatus.NOT_FOUND, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed'),
+				HttpStatus.NOT_FOUND,
+			);
 		}
 
 		// 요청으로부터 온 비밀번호와 암호화 된 비밀번호 검사
@@ -201,7 +233,10 @@ export class AuthService {
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Sign-in success!', { accessToken });
 		} else {
 			// 비밀번호가 다를경우
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed');
+			throw new HttpException(
+				new ResponseDto(HttpStatus.BAD_REQUEST, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed'),
+				HttpStatus.BAD_REQUEST,
+			);
 		}
 	}
 
@@ -211,11 +246,14 @@ export class AuthService {
 
 		// 해당 이메일 계정이 없으면
 		if (user == undefined) {
-			return new ResponseDto(
-				Constant.HttpStatus.OK,
-				ResponseCode.NOT_REGISTERED_USER,
-				true,
-				"Can't find any account with email",
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.NOT_FOUND,
+					ResponseCode.NOT_REGISTERED_USER,
+					true,
+					"Can't find any account with email",
+				),
+				HttpStatus.NOT_FOUND,
 			);
 		}
 
@@ -243,7 +281,15 @@ export class AuthService {
 		if (sendedMailResponse.search('OK') && sendedMailReceiver === email) {
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'Temporary Password is sented.');
 		} else {
-			throw new InternalServerErrorException(`Password Reset Failed. Internal Server error. Plz contact server admin`);
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.ETC,
+					true,
+					`Password Reset Failed. Internal Server error. Plz contact server admin`,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 	}
 }

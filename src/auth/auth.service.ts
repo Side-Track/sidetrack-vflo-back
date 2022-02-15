@@ -3,9 +3,9 @@ import { Inject, Injectable, InternalServerErrorException, UnauthorizedException
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from './dto/user-credential.dto';
-import { EmailVerificationRepository } from './email_verification.repository';
+import { EmailVerificationRepository } from './repositories/email_verification.repository';
 import { User } from './entities/user.entity';
-import { UserRepository } from './user.repository';
+import { UserRepository } from './repositories/user.repository';
 
 import Constant from 'src/response.constant';
 import { EmailVerificationDto } from './dto/email-verification.dto';
@@ -15,6 +15,10 @@ import { JwtService } from '@nestjs/jwt';
 import { ResponseCode } from 'src/response.code.enum';
 import { EmailVerification } from './entities/email_verification.entity';
 import { Connection } from 'typeorm';
+import { ProfileService } from 'src/profile/profile.service';
+import { ProfileDto } from 'src/profile/dto/profile.dto';
+import { ProfileRepository } from 'src/profile/profile.repository';
+import { Profile } from 'src/profile/entities/profile.entity';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +26,7 @@ export class AuthService {
 	// Solve : @InjectionRepository() 대신 커넥션을 이용해서 다음과 같이 정의하는 방법을 사용함.
 	private userRepository: UserRepository;
 	private emailVerficiationRepository: EmailVerificationRepository;
+	private profileRepository: ProfileRepository;
 	constructor(
 		private readonly connection: Connection,
 		private readonly mailerService: MailerService,
@@ -29,6 +34,7 @@ export class AuthService {
 	) {
 		this.userRepository = this.connection.getCustomRepository(UserRepository);
 		this.emailVerficiationRepository = this.connection.getCustomRepository(EmailVerificationRepository);
+		this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
 	}
 
 	/* constructor(
@@ -51,7 +57,6 @@ export class AuthService {
 				available: true,
 			});
 		}
-
 		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ALREADY_REGISTERED_USER, true, 'Duplicate User exist', {
 			available: false,
 		});
@@ -116,7 +121,6 @@ export class AuthService {
 			// verified_date update
 			verifyObject.verified_date = new Date();
 			await this.emailVerficiationRepository.save(verifyObject);
-
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, 'email is verified!');
 		} else {
 			// 검색 결과 없으면
@@ -147,7 +151,19 @@ export class AuthService {
 
 		// 유저 만들기가 모종의 이유로 실패 시
 		if (!user) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ETC, true, 'unspecific error occured.');
+			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ETC, true, 'createUser - unspecific error occured.');
+		}
+
+		const profile = await this.profileRepository.createProfile(user, new ProfileDto());
+
+		// 프로필 자동생성이 모종의 이유로 실패 시
+		if (!profile) {
+			return new ResponseDto(
+				Constant.HttpStatus.OK,
+				ResponseCode.ETC,
+				true,
+				'createProfile - unspecific error occured.',
+			);
 		}
 
 		// 성공 시
@@ -162,19 +178,19 @@ export class AuthService {
 		// 받은 데이터 기준으로 db 검색
 		const user = await this.userRepository.findOne({ email: email });
 
-		// 요청으로부터 온 비밀번호와 암호화 된 비밀번호 검사
-		const passwordCompareResult = await bcrypt.compare(password, user.password);
-
 		// 존재하지 않는 유저일경우
 		if (!user) {
 			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed');
 		}
 
+		// 요청으로부터 온 비밀번호와 암호화 된 비밀번호 검사
+		const passwordCompareResult = await bcrypt.compare(password, user.password);
+
 		if (passwordCompareResult) {
 			// 유저 토큰 생성
 			const { idx, email, email_verified, is_admin } = user;
 			const payload = {
-				idx: idx,
+				userIdx: idx,
 				email: email,
 				emailVerified: email_verified,
 				isAdmin: is_admin,

@@ -57,6 +57,7 @@ export class AuthService {
 				available: true,
 			});
 		}
+
 		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ALREADY_REGISTERED_USER, true, 'Duplicate User exist', {
 			available: false,
 		});

@@ -5,6 +5,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';
 import { Profile } from './entities/profile.entity';
 import { ResponseCode } from 'src/response.code.enum';
+import { ResponseMessage } from 'src/response.message.enum';
 
 @EntityRepository(Profile)
 export class ProfileRepository extends Repository<Profile> {
@@ -49,9 +50,9 @@ export class ProfileRepository extends Repository<Profile> {
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.ALREADY_REGISTERED_USER,
+					ResponseCode.INTERNAL_SERVER_ERROR,
 					true,
-					'Internal Server Error is occured. Plz contact administartor.',
+					ResponseMessage.INTERNAL_SERVER_ERROR,
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
@@ -59,7 +60,7 @@ export class ProfileRepository extends Repository<Profile> {
 	}
 
 	async updateProfile(user: User, profileDto: ProfileDto): Promise<ResponseDto> {
-		// 요청에서 닉네임과 바이오 가져오
+		// 요청에서 닉네임과 바이오 가져오기
 		const { nickname, bio } = profileDto;
 
 		// 프로필 찾기
@@ -72,7 +73,7 @@ export class ProfileRepository extends Repository<Profile> {
 			// return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is Updated!', {newProfile});
 
 			throw new HttpException(
-				new ResponseDto(HttpStatus.NOT_FOUND, ResponseCode.DATA_NOT_FOUND, true, 'Profile Not Founded'),
+				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
 				HttpStatus.NOT_FOUND,
 			);
 		}
@@ -83,14 +84,14 @@ export class ProfileRepository extends Repository<Profile> {
 		try {
 			profile = await this.save(profile);
 
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is Updated!', { profile });
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 업데이트 되었습니다.', { profile });
 		} catch (err) {
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.ALREADY_REGISTERED_USER,
+					ResponseCode.INTERNAL_SERVER_ERROR,
 					true,
-					'Internal Server Error is occured. Plz contact administartor.',
+					ResponseMessage.INTERNAL_SERVER_ERROR,
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);

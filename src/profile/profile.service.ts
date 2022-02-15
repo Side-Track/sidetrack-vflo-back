@@ -8,6 +8,7 @@ import { ProfileRepository } from './profile.repository';
 
 import { ResponseCode } from 'src/response.code.enum';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ResponseMessage } from 'src/response.message.enum';
 
 @Injectable()
 export class ProfileService {
@@ -32,7 +33,7 @@ export class ProfileService {
 		// 닉네임이 빈 문자열인지 체크
 		if (nickname.length == 0 || !nickname || nickname.replace(/\s/g, '') == '') {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.BAD_REQUEST, ResponseCode.ETC, true, 'nickname is empty string.'),
+				new ResponseDto(HttpStatus.BAD_REQUEST, ResponseCode.ETC, true, '잘못된 요청입니다.'),
 				HttpStatus.BAD_REQUEST,
 			);
 		}
@@ -61,12 +62,12 @@ export class ProfileService {
 		if (existNicknameObj[nickname] == undefined) {
 			responseData['isUnique'] = true;
 
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is available!', responseData);
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '사용가능한 닉네임입니다.', responseData);
 		}
 
 		// 사용불가능한 닉네임인 경우
 		responseData['isUnique'] = false;
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'nickname is unavailable', responseData);
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '이미 사용중인 닉네임입니다.', responseData);
 	}
 
 	// 프로필 생성
@@ -77,7 +78,7 @@ export class ProfileService {
 		// 유저 없으면 에러
 		if (!user) {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.NOT_FOUND, ResponseCode.NOT_REGISTERED_USER, true, 'Cannot find user'),
+				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
 				HttpStatus.NOT_FOUND,
 			);
 		}
@@ -88,18 +89,15 @@ export class ProfileService {
 		// 생성 후 모종의 이유로 없으면 에러던짐
 		if (!profile) {
 			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.NOT_FOUND,
-					ResponseCode.NOT_REGISTERED_USER,
-					true,
-					'Internal Server Error is occured. Plz contact administartor.',
-				),
-				HttpStatus.NOT_FOUND,
+				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
+				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
 
 		// 프로필 리턴
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is created!', { profile });
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 성공적으로 생성되었습니다.', {
+			profile,
+		});
 	}
 
 	// 프로필 업데이트
@@ -112,8 +110,8 @@ export class ProfileService {
 		// 유저 없으면 리턴
 		if (!user) {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.NOT_FOUND, ResponseCode.NOT_REGISTERED_USER, true, 'Cannot find user'),
-				HttpStatus.NOT_FOUND,
+				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
+				HttpStatus.NO_CONTENT,
 			);
 		}
 

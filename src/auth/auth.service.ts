@@ -17,6 +17,7 @@ import { ProfileService } from 'src/profile/profile.service';
 import { ProfileDto } from 'src/profile/dto/profile.dto';
 import { ProfileRepository } from 'src/profile/profile.repository';
 import { Profile } from 'src/profile/entities/profile.entity';
+import { ResponseMessage } from 'src/response.message.enum';
 
 @Injectable()
 export class AuthService {
@@ -56,11 +57,12 @@ export class AuthService {
 			});
 		}
 
+		// 이미 유저 존재할 때
 		const response = new ResponseDto(
 			HttpStatus.FOUND,
 			ResponseCode.ALREADY_REGISTERED_USER,
 			true,
-			'Duplicate User exist',
+			ResponseMessage.ALREADY_REGISTERED_USER,
 			{
 				available: false,
 			},
@@ -79,9 +81,9 @@ export class AuthService {
 		if (user && user.email_verified && verified) {
 			const response = new ResponseDto(
 				HttpStatus.OK,
-				ResponseCode.ALREADY_VERIFIED_ACCOUNT,
+				ResponseCode.ALREADY_VERIFIED_USER,
 				true,
-				'Already verified account.',
+				ResponseMessage.ALREADY_VERIFIED_USER,
 				{ verified: user.email_verified },
 			);
 
@@ -89,18 +91,44 @@ export class AuthService {
 		}
 
 		// 인증 받아야 한다면 : 가입은 되었으나 인증은 안된경우와 처음 인증하고 가입절차 밟는 경우
-
 		// 코드를 생성함
 		const verificationCode = await this.emailVerficiationRepository.createVerificationCode(email);
 
 		// 이메일 내용 작성
-		const sendedMail = await this.mailerService.sendMail({
-			to: email, // list of receivers
-			from: process.env.EMAIL_HOST, // sender address
-			subject: '[VFLO] 회원가입 이메일 인증 ✔', // Subject line
-			text: '인증코드 : ' + verificationCode, // plaintext body
-			// html: '<b>welcome</b>', // HTML body content
-		});
+		let sendedMail = undefined;
+		try {
+			sendedMail = await this.mailerService.sendMail({
+				to: email, // list of receivers
+				from: process.env.EMAIL_HOST, // sender address
+				subject: '[VFLO] 회원가입 이메일 인증 ✔', // Subject line
+				text: '인증코드 : ' + verificationCode, // plaintext body
+				// html: '<b>welcome</b>', // HTML body content
+			});
+		} catch (err) {
+			// 이메일 보낼 때 오류
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.MAILER_ERROR,
+					true,
+					ResponseMessage.MAILER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 이메일 보낸 후 응답객체가 존재하지 않을 때
+		if (sendedMail == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.MAILER_ERROR,
+					true,
+					ResponseMessage.MAILER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
 
 		// 메일전송 응답객체의 응답문
 		const sendedMailResponse = sendedMail.response;
@@ -110,7 +138,7 @@ export class AuthService {
 
 		// 메일 발송 완료 되었다면
 		if (sendedMailResponse.search('OK') && sendedMailReceiver === email) {
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Email-verification code is generated');
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '인증메일이 발송되었습니다.');
 		}
 	}
 
@@ -126,16 +154,11 @@ export class AuthService {
 			// verified_date update
 			verifyObject.verified_date = new Date();
 			await this.emailVerficiationRepository.save(verifyObject);
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'email is verified!');
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '이메일 인증 성공');
 		} else {
 			// 검색 결과 없으면
 			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.NO_CONTENT,
-					ResponseCode.DATA_NOT_FOUND,
-					false,
-					"Can't find any matchs with email, code data",
-				),
+				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, false, ResponseMessage.DATA_NOT_FOUND),
 				HttpStatus.NO_CONTENT,
 			);
 		}
@@ -152,7 +175,12 @@ export class AuthService {
 		// 인증받은 이메일이 아니라면(인증받은 이메일-코드 페어가 없으면)
 		if (!verifiedEmail) {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_VERIFIED_EMAIL, true, 'Not Verified Email.'),
+				new ResponseDto(
+					HttpStatus.UNAUTHORIZED,
+					ResponseCode.NOT_VERIFIED_EMAIL,
+					true,
+					ResponseMessage.NOT_VERIFIED_EMAIL,
+				),
 				HttpStatus.UNAUTHORIZED,
 			);
 		}
@@ -163,12 +191,7 @@ export class AuthService {
 		// 유저 만들기가 모종의 이유로 실패 시
 		if (!user) {
 			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.ETC,
-					true,
-					'createUser - unspecific error occured.',
-				),
+				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
@@ -178,18 +201,13 @@ export class AuthService {
 		// 프로필 자동생성이 모종의 이유로 실패 시
 		if (!profile) {
 			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.ETC,
-					true,
-					'createProfile - unspecific error occured.',
-				),
+				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
 
 		// 성공 시
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Sign-up success!');
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '회원가입이 완료되었습니다.');
 	}
 
 	// 로그인
@@ -201,9 +219,15 @@ export class AuthService {
 		const user = await this.userRepository.findOne({ email: email });
 
 		// 존재하지 않는 유저일경우
+		// 오류 메세지는 보안을 위해 이메일이나 비밀번호가 잘못되었다고 띄움
 		if (!user) {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.NOT_FOUND, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed'),
+				new ResponseDto(
+					HttpStatus.NOT_FOUND,
+					ResponseCode.WRONG_EMAIL_OR_PASSWORD,
+					true,
+					ResponseMessage.WRONG_EMAIL_OR_PASSWORD,
+				),
 				HttpStatus.NOT_FOUND,
 			);
 		}
@@ -223,30 +247,31 @@ export class AuthService {
 			const accessToken = await this.jwtService.sign(payload);
 
 			// 정상처리. 토큰과 함께 반환
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Sign-in success!', { accessToken });
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '로그인 성공', { accessToken });
 		} else {
 			// 비밀번호가 다를경우
 			throw new HttpException(
-				new ResponseDto(HttpStatus.BAD_REQUEST, ResponseCode.WRONG_EMAIL_OR_PASSWORD, true, 'Sign-in Failed'),
+				new ResponseDto(
+					HttpStatus.BAD_REQUEST,
+					ResponseCode.WRONG_EMAIL_OR_PASSWORD,
+					true,
+					ResponseMessage.WRONG_EMAIL_OR_PASSWORD,
+				),
 				HttpStatus.BAD_REQUEST,
 			);
 		}
 	}
 
 	// 비밀번호 리셋
+	// TODO : 인증절차 거쳐야 할 듯
 	async resetPassword(email: string): Promise<ResponseDto> {
 		let user = await this.userRepository.findOne({ email });
 
 		// 해당 이메일 계정이 없으면
 		if (user == undefined) {
 			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.NOT_FOUND,
-					ResponseCode.NOT_REGISTERED_USER,
-					true,
-					"Can't find any account with email",
-				),
-				HttpStatus.NOT_FOUND,
+				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
+				HttpStatus.NO_CONTENT,
 			);
 		}
 
@@ -256,13 +281,40 @@ export class AuthService {
 		const tempPassword = await this.userRepository.createTemporaryPassword(user);
 
 		// 이메일 내용 작성
-		const sendedMail = await this.mailerService.sendMail({
-			to: email, // list of receivers
-			from: process.env.EMAIL_HOST, // sender address
-			subject: '[VFLO] 비밀번호 초기화 ✔', // Subject line
-			text: '인증코드 : ' + tempPassword + '\n임시 비밀번호로 로그인 후 새 비밀번호로 변경하십시오', // plaintext body
-			// html: '<b>welcome</b>', // HTML body content
-		});
+		let sendedMail = undefined;
+		try {
+			sendedMail = await this.mailerService.sendMail({
+				to: email, // list of receivers
+				from: process.env.EMAIL_HOST, // sender address
+				subject: '[VFLO] 비밀번호 초기화 ✔', // Subject line
+				text: '인증코드 : ' + tempPassword + '\n임시 비밀번호로 로그인 후 새 비밀번호로 변경하십시오', // plaintext body
+				// html: '<b>welcome</b>', // HTML body content
+			});
+		} catch (err) {
+			// 이메일 보낼 때 오류
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.MAILER_ERROR,
+					true,
+					ResponseMessage.MAILER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 이메일 응답객체 존재하지 않을 때
+		if (sendedMail == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.MAILER_ERROR,
+					true,
+					ResponseMessage.MAILER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
 
 		// 메일전송 응답객체의 응답문
 		const sendedMailResponse = sendedMail.response;
@@ -272,15 +324,10 @@ export class AuthService {
 
 		// 메일 발송 완료 되었다면
 		if (sendedMailResponse.search('OK') && sendedMailReceiver === email) {
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Temporary Password is sented.');
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '임시비밀번호가 발송되었습니다.');
 		} else {
 			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.ETC,
-					true,
-					`Password Reset Failed. Internal Server error. Plz contact server admin`,
-				),
+				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}

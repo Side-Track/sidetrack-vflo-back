@@ -6,6 +6,7 @@ import { User } from '../entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 import authPolicy from '../auth.policy';
 import { ResponseCode } from 'src/response.code.enum';
+import { ResponseMessage } from 'src/response.message.enum';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -21,24 +22,26 @@ export class UserRepository extends Repository<User> {
 			await this.save(user);
 			return user;
 		} catch (err) {
+			//  이미 같은것이 존재할 때 (Unique field 에 같은게 들어가려고 할 때)
 			if (err.code === 'ER_DUP_ENTRY') {
 				throw new HttpException(
 					new ResponseDto(
 						HttpStatus.CONFLICT,
 						ResponseCode.ALREADY_REGISTERED_USER,
 						true,
-						'Already existing user name',
+						ResponseMessage.ALREADY_REGISTERED_USER,
 					),
 					HttpStatus.CONFLICT,
 				);
 			}
 
+			// 기타 서버 에러
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.ALREADY_REGISTERED_USER,
+					ResponseCode.INTERNAL_SERVER_ERROR,
 					true,
-					'Internal Server Error is occured. Plz contact administartor.',
+					ResponseMessage.INTERNAL_SERVER_ERROR,
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
@@ -65,12 +68,13 @@ export class UserRepository extends Repository<User> {
 			return password;
 		} catch (err) {
 			Logger.warn(err);
+			// 기타 에러
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.ALREADY_REGISTERED_USER,
+					ResponseCode.INTERNAL_SERVER_ERROR,
 					true,
-					'Internal Server Error is occured. Plz contact administartor.',
+					ResponseMessage.INTERNAL_SERVER_ERROR,
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);

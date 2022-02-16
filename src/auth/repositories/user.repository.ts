@@ -19,8 +19,7 @@ export class UserRepository extends Repository<User> {
 		const user = this.create({ email: email, password: hashedPassword });
 
 		try {
-			await this.save(user);
-			return user;
+			return await this.save(user);
 		} catch (err) {
 			//  이미 같은것이 존재할 때 (Unique field 에 같은게 들어가려고 할 때)
 			if (err.code === 'ER_DUP_ENTRY') {

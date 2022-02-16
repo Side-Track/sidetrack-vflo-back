@@ -81,9 +81,9 @@ export class AuthService {
 		if (user && user.email_verified && verified) {
 			const response = new ResponseDto(
 				HttpStatus.OK,
-				ResponseCode.ALREADY_VERIFIED_USER,
+				ResponseCode.ALREADY_VERIFIED_EMAIL,
 				true,
-				ResponseMessage.ALREADY_VERIFIED_USER,
+				ResponseMessage.ALREADY_VERIFIED_EMAIL,
 				{ verified: user.email_verified },
 			);
 
@@ -252,12 +252,12 @@ export class AuthService {
 			// 비밀번호가 다를경우
 			throw new HttpException(
 				new ResponseDto(
-					HttpStatus.BAD_REQUEST,
+					HttpStatus.NOT_FOUND,
 					ResponseCode.WRONG_EMAIL_OR_PASSWORD,
 					true,
 					ResponseMessage.WRONG_EMAIL_OR_PASSWORD,
 				),
-				HttpStatus.BAD_REQUEST,
+				HttpStatus.NOT_FOUND,
 			);
 		}
 	}

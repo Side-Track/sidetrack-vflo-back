@@ -42,9 +42,7 @@ export class ProfileRepository extends Repository<Profile> {
 		let profile = this.create({ user, nickname, bio });
 
 		try {
-			profile = await this.save(profile);
-
-			return profile;
+			return await this.save(profile);
 		} catch (err) {
 			// 에러던지기
 			throw new HttpException(

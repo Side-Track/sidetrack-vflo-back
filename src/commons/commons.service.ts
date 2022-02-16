@@ -5,6 +5,7 @@ import { GenreRepository } from './repositories/genre.repository';
 import { ResponseCode } from 'src/response.code.enum';
 import { GenreDto } from './dto/genre.dto';
 import { User } from 'src/auth/entities/user.entity';
+import { ResponseMessage } from 'src/response.message.enum';
 
 @Injectable()
 export class CommonsService {
@@ -28,11 +29,10 @@ export class CommonsService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
 	}
 
-
 	async createGenre(user: User, name: string): Promise<ResponseDto> {
 		// 관리자인지 확인
 		if (!user.is_admin) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.UNAUTHORIZED_USER, true, 'un-authorized user.');
+			return new ResponseDto(HttpStatus.OK, ResponseCode.UNAUTHORIZED_USER, true, 'un-authorized user.');
 		}
 
 		// 중복 장르 있는지 확인
@@ -40,10 +40,10 @@ export class CommonsService {
 
 		if (existGenre) {
 			return new ResponseDto(
-				Constant.HttpStatus.OK,
+				HttpStatus.CONFLICT,
 				ResponseCode.ALREADY_EXIST_GENRE,
 				true,
-				`${name} is aleady exist genre`,
+				ResponseMessage.ALREADY_EXIST_GENRE,
 				{ existGenre },
 			);
 		}
@@ -53,11 +53,16 @@ export class CommonsService {
 
 		// 만들기 실패
 		if (!genre) {
-			return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.ETC, true, 'create new genre is failed');
+			return new ResponseDto(
+				HttpStatus.INTERNAL_SERVER_ERROR,
+				ResponseCode.ETC,
+				true,
+				ResponseMessage.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		// 만들기 성공
-		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, `create new genre : ${name}`, {
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, `create new genre : ${name}`, {
 			genre,
 		});
 	}

@@ -1,6 +1,5 @@
 import { ArgumentMetadata, BadRequestException, PipeTransform } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
-import Constant from 'src/response.constant';
 import { ResponseCode } from 'src/response.code.enum';
 
 class GlobalEmptyStringValidationPipe implements PipeTransform {

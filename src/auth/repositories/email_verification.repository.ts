@@ -1,9 +1,11 @@
-import { InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, IsNull, Not, Repository } from 'typeorm';
 import { EmailVerification } from '../entities/email_verification.entity';
 import { EmailVerificationDto } from '../dto/email-verification.dto';
 import authPolicy from '../auth.policy';
+import { ResponseCode } from 'src/response.code.enum';
+import { ResponseMessage } from 'src/response.message.enum';
 
 @EntityRepository(EmailVerification)
 export class EmailVerificationRepository extends Repository<EmailVerification> {
@@ -27,7 +29,15 @@ export class EmailVerificationRepository extends Repository<EmailVerification> {
 			return code;
 		} catch (err) {
 			Logger.warn(err);
-			throw new InternalServerErrorException('Internal Server Error is occured. Plz contact administartor.');
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 	}
 

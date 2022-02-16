@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { GenreRepository } from './repositories/genre.repository';
-import Constant from 'src/response.constant';
 import { ResponseCode } from 'src/response.code.enum';
 import { GenreDto } from './dto/genre.dto';
 import { User } from 'src/auth/entities/user.entity';
@@ -16,18 +15,19 @@ export class CommonsService {
 
 	async getAllGenreList() {
 		const list = await this.genreRepository.find();
+		// //  장르가 없을 때
+		// if (list.length == 0) {
+		// 	return new ResponseDto(
+		// 		HttpStatus.NO_CONTENT,
+		// 		ResponseCode.DATA_NOT_FOUND,
+		// 		true,
+		// 		`Can't find any genre.`,
+		// 	);
+		// }
 
-		if (list.length == 0) {
-			return new ResponseDto(
-				Constant.HttpStatus.DATA_NOT_FOUND,
-				ResponseCode.DATA_NOT_FOUND,
-				true,
-				`Can't find any genre.`,
-			);
-		}
-
-		return new ResponseDto(Constant.HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, `Request Succeed`, { genreList: list });
 	}
+
 
 	async createGenre(user: User, name: string): Promise<ResponseDto> {
 		// 관리자인지 확인

@@ -1,10 +1,12 @@
-import { ConflictException, InternalServerErrorException, Logger } from '@nestjs/common';
+import { ConflictException, HttpException, HttpStatus, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, Repository } from 'typeorm';
 import { UserCredentialDto } from '../dto/user-credential.dto';
 import { User } from '../entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 import authPolicy from '../auth.policy';
+import { ResponseCode } from 'src/response.code.enum';
+import { ResponseMessage } from 'src/response.message.enum';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -19,11 +21,29 @@ export class UserRepository extends Repository<User> {
 		try {
 			return await this.save(user);
 		} catch (err) {
+			//  이미 같은것이 존재할 때 (Unique field 에 같은게 들어가려고 할 때)
 			if (err.code === 'ER_DUP_ENTRY') {
-				throw new ConflictException('Already existing user name');
+				throw new HttpException(
+					new ResponseDto(
+						HttpStatus.CONFLICT,
+						ResponseCode.ALREADY_REGISTERED_USER,
+						true,
+						ResponseMessage.ALREADY_REGISTERED_USER,
+					),
+					HttpStatus.CONFLICT,
+				);
 			}
 
-			throw new InternalServerErrorException('Internal Server Error is occured. Plz contact administartor.');
+			// 기타 서버 에러
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 	}
 
@@ -47,7 +67,16 @@ export class UserRepository extends Repository<User> {
 			return password;
 		} catch (err) {
 			Logger.warn(err);
-			throw new InternalServerErrorException('Internal Server Error is occured. Plz contact administartor.');
+			// 기타 에러
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 	}
 

@@ -2,8 +2,8 @@ import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs
 import { User } from 'src/auth/entities/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, Repository } from 'typeorm';
-import { ProfileDto } from './dto/profile.dto';
-import { Profile } from './entities/profile.entity';
+import { ProfileDto } from '../dto/profile.dto';
+import { Profile } from '../entities/profile.entity';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
 

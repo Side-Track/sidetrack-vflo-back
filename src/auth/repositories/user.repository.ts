@@ -66,8 +66,6 @@ export class UserRepository extends Repository<User> {
 			await this.save(user);
 			return password;
 		} catch (err) {
-			Logger.warn(err);
-			// 기타 에러
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,

@@ -28,7 +28,6 @@ export class EmailVerificationRepository extends Repository<EmailVerification> {
 			await this.save(emailVerificationTuple);
 			return code;
 		} catch (err) {
-			Logger.warn(err);
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,

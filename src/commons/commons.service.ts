@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { GenreRepository } from './repositories/genre.repository';
@@ -32,19 +32,30 @@ export class CommonsService {
 	async createGenre(user: User, name: string): Promise<ResponseDto> {
 		// 관리자인지 확인
 		if (!user.is_admin) {
-			return new ResponseDto(HttpStatus.OK, ResponseCode.UNAUTHORIZED_USER, true, 'un-authorized user.');
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.UNAUTHORIZED,
+					ResponseCode.UNAUTHORIZED_USER,
+					true,
+					ResponseMessage.UNAUTHORIZED_USER,
+				),
+				HttpStatus.UNAUTHORIZED,
+			);
 		}
 
 		// 중복 장르 있는지 확인
 		const existGenre = await this.genreRepository.findOne({ name });
 
 		if (existGenre) {
-			return new ResponseDto(
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.CONFLICT,
+					ResponseCode.ALREADY_EXIST_GENRE,
+					true,
+					ResponseMessage.ALREADY_EXIST_GENRE,
+					{ existGenre },
+				),
 				HttpStatus.CONFLICT,
-				ResponseCode.ALREADY_EXIST_GENRE,
-				true,
-				ResponseMessage.ALREADY_EXIST_GENRE,
-				{ existGenre },
 			);
 		}
 
@@ -53,11 +64,14 @@ export class CommonsService {
 
 		// 만들기 실패
 		if (!genre) {
-			return new ResponseDto(
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.ETC,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
-				ResponseCode.ETC,
-				true,
-				ResponseMessage.INTERNAL_SERVER_ERROR,
 			);
 		}
 

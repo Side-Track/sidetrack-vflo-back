@@ -33,7 +33,7 @@ export class ProfileService {
 		// 닉네임이 빈 문자열인지 체크
 		if (nickname.length == 0 || !nickname || nickname.replace(/\s/g, '') == '') {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.BAD_REQUEST, ResponseCode.ETC, true, '잘못된 요청입니다.'),
+				new ResponseDto(HttpStatus.BAD_REQUEST, ResponseCode.ETC, true, ResponseMessage.BAD_REQUEST),
 				HttpStatus.BAD_REQUEST,
 			);
 		}
@@ -58,16 +58,23 @@ export class ProfileService {
 			responseData['recommendList'] = recommendList;
 		}
 
-		// 사용가능한 닉네임일 경우
-		if (existNicknameObj[nickname] == undefined) {
-			responseData['isUnique'] = true;
-
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '사용가능한 닉네임입니다.', responseData);
+		// 사용불가능한 닉네임인 경우
+		if (existNicknameObj[nickname] != undefined) {
+			responseData['isUnique'] = false;
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.CONFLICT,
+					ResponseCode.ALREADY_EXIST_NICKNAME,
+					false,
+					ResponseMessage.ALREADY_EXIST_NICKNAME,
+				),
+				HttpStatus.CONFLICT,
+			);
 		}
 
-		// 사용불가능한 닉네임인 경우
-		responseData['isUnique'] = false;
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '이미 사용중인 닉네임입니다.', responseData);
+		// 사용가능한 닉네임일 경우
+		responseData['isUnique'] = true;
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '사용가능한 닉네임입니다.', responseData);
 	}
 
 	// 프로필 생성
@@ -78,7 +85,12 @@ export class ProfileService {
 		// 유저 없으면 에러
 		if (!user) {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
+				new ResponseDto(
+					HttpStatus.NOT_FOUND,
+					ResponseCode.NOT_REGISTERED_USER,
+					true,
+					ResponseMessage.NOT_REGISTERED_USER,
+				),
 				HttpStatus.NOT_FOUND,
 			);
 		}
@@ -102,15 +114,18 @@ export class ProfileService {
 
 	// 프로필 업데이트
 	async updateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
-		console.log(requsetUserIdx);
-
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
 		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
 
 		// 유저 없으면 리턴
 		if (!user) {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
+				new ResponseDto(
+					HttpStatus.NOT_FOUND,
+					ResponseCode.NOT_REGISTERED_USER,
+					true,
+					ResponseMessage.NOT_REGISTERED_USER,
+				),
 				HttpStatus.NO_CONTENT,
 			);
 		}

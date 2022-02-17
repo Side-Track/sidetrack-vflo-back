@@ -1,4 +1,11 @@
-import { HttpException, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+	forwardRef,
+	HttpException,
+	HttpStatus,
+	Inject,
+	Injectable,
+	InternalServerErrorException,
+} from '@nestjs/common';
 import { User } from 'src/auth/entities/user.entity';
 import { UserRepository } from 'src/auth/repositories/user.repository';
 import { ResponseDto } from 'src/dto/response.dto';
@@ -9,24 +16,24 @@ import { ProfileRepository } from './repositories/profile.repository';
 import { ResponseCode } from 'src/response.code.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseMessage } from 'src/response.message.enum';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class ProfileService {
 	// Repository DI
-	private userRepository: UserRepository;
-	private profileRepository: ProfileRepository;
-	constructor(private readonly connection: Connection) {
-		this.userRepository = this.connection.getCustomRepository(UserRepository);
-		this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
-	}
+	// private userRepository: UserRepository;
+	// private profileRepository: ProfileRepository;
+	// constructor(private readonly connection: Connection) {
+	// 	this.userRepository = this.connection.getCustomRepository(UserRepository);
+	// 	this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
+	// }
 
-	// constructor(
-	// 	@InjectRepository(UserRepository)
-	// 	private userRepository: UserRepository,
+	constructor(
+		private profileRepository: ProfileRepository,
 
-	// 	@InjectRepository(ProfileRepository)
-	// 	private profileRepository: ProfileRepository,
-	// ) {}
+		@Inject(forwardRef(() => AuthService))
+		private readonly authService: AuthService,
+	) {}
 
 	// 닉네임 중복체크
 	async checkDuplicateNickname(nickname: string, recommend: boolean): Promise<ResponseDto> {
@@ -80,7 +87,7 @@ export class ProfileService {
 	// 프로필 생성
 	async createProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
+		const user: User = await this.authService.getUserByidx(requsetUserIdx);
 
 		// 유저 없으면 에러
 		if (!user) {
@@ -115,7 +122,7 @@ export class ProfileService {
 	// 프로필 업데이트
 	async updateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
+		const user: User = await this.authService.getUserByidx(requsetUserIdx);
 
 		// 유저 없으면 리턴
 		if (!user) {

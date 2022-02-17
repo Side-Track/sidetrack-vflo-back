@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -14,6 +14,7 @@ import { UserRepository } from './repositories/user.repository';
 
 @Module({
 	imports: [
+		forwardRef(() => ProfileModule),
 		TypeOrmModule.forFeature([UserRepository, EmailVerificationRepository]),
 		JwtModule.registerAsync({
 			// .env 에 등록되어 있는 것을 가져오는것이 비동기 작업이므로, 초기화 시에 env 요소를 못불러온 상태일 수 있음.
@@ -29,7 +30,7 @@ import { UserRepository } from './repositories/user.repository';
 		PassportModule.register({ defaultStrategy: 'jwt' }),
 	],
 	controllers: [AuthController],
-	providers: [JwtStrategy, UserRepository, AuthService],
-	exports: [JwtStrategy, UserRepository, PassportModule],
+	providers: [JwtStrategy, AuthService],
+	exports: [JwtStrategy, PassportModule, AuthService],
 })
 export class AuthModule {}

@@ -22,6 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 		// HttpException이 아니라면 ETC 예외처리
 		if (!(exception instanceof HttpException)) {
 			// exception = new InternalServerErrorException();
+			console.log(exception);
 			exception = new HttpException(
 				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
 				HttpStatus.INTERNAL_SERVER_ERROR,

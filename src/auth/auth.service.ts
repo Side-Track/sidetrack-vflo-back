@@ -1,5 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from './dto/user-credential.dto';
@@ -23,29 +23,29 @@ import { ResponseMessage } from 'src/response.message.enum';
 export class AuthService {
 	// Cause : any method in repository occur 500 internal error.
 	// Solve : @InjectionRepository() 대신 커넥션을 이용해서 다음과 같이 정의하는 방법을 사용함.
-	private userRepository: UserRepository;
-	private emailVerficiationRepository: EmailVerificationRepository;
-	private profileRepository: ProfileRepository;
+	// private userRepository: UserRepository;
+	// private emailVerficiationRepository: EmailVerificationRepository;
+	// private profileRepository: ProfileRepository;
+	// constructor(
+	// 	private readonly connection: Connection,
+	// 	private readonly mailerService: MailerService,
+	// 	private jwtService: JwtService,
+	// ) {
+	// 	this.userRepository = this.connection.getCustomRepository(UserRepository);
+	// 	this.emailVerficiationRepository = this.connection.getCustomRepository(EmailVerificationRepository);
+	// 	this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
+	// }
+
 	constructor(
-		private readonly connection: Connection,
+		private userRepository: UserRepository,
+		private emailVerficiationRepository: EmailVerificationRepository,
+
+		@Inject(forwardRef(() => ProfileService))
+		private readonly ProfileService: ProfileService,
+
 		private readonly mailerService: MailerService,
 		private jwtService: JwtService,
-	) {
-		this.userRepository = this.connection.getCustomRepository(UserRepository);
-		this.emailVerficiationRepository = this.connection.getCustomRepository(EmailVerificationRepository);
-		this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
-	}
-
-	/* constructor(
-	// 	@InjectRepository(UserRepository)
-	// 	private userRepository: UserRepository,
-
-	// 	@InjectRepository(EmailVerificationRepository)
-	// 	private emailVerficiationRepository: EmailVerificationRepository,
-	//  private readonly mailerService: MailerService,
-	//	private jwtService: JwtService,
-	// ) {}
-	*/
+	) {}
 
 	// 중복 이메일 검사
 	async checkDuplicateEmail(email: string): Promise<ResponseDto> {
@@ -196,7 +196,7 @@ export class AuthService {
 			);
 		}
 
-		const profile = await this.profileRepository.createProfile(user, new ProfileDto());
+		const profile = await this.ProfileService.createProfile(user.idx, new ProfileDto());
 
 		// 프로필 자동생성이 모종의 이유로 실패 시
 		if (!profile) {
@@ -331,5 +331,10 @@ export class AuthService {
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
+	}
+
+	//
+	async getUserByidx(idx: number): Promise<User> {
+		return await this.userRepository.findOne({ idx });
 	}
 }

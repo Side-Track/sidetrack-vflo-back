@@ -18,21 +18,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseMessage } from 'src/response.message.enum';
 import { AuthService } from 'src/auth/auth.service';
 import { UserService } from 'src/user/user.service';
+import { Profile } from './entities/profile.entity';
 
 @Injectable()
 export class ProfileService {
-	// Repository DI
-	// private userRepository: UserRepository;
-	// private profileRepository: ProfileRepository;
-	// constructor(private readonly connection: Connection) {
-	// 	this.userRepository = this.connection.getCustomRepository(UserRepository);
-	// 	this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
-	// }
-
 	constructor(
 		private profileRepository: ProfileRepository,
 
-		// UserService 는 ProfileService 참조함. 순환참조 제거하기 위한 방법
+		// ProfileService 는 UserService 참조함. 순환참조 제거하기 위한 방법
 		@Inject(forwardRef(() => UserService))
 		private readonly userService: UserService,
 	) {}
@@ -86,10 +79,10 @@ export class ProfileService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '사용가능한 닉네임입니다.', responseData);
 	}
 
-	// 프로필 생성
-	async createProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
+	// 명시적 프로필 생성 (회원가입 시 자동생성 안할 경우 명시적으로 생성)
+	async explicitCreateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userService.getUserByidx(requsetUserIdx);
+		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
 		// 유저 없으면 에러
 		if (!user) {
@@ -121,10 +114,26 @@ export class ProfileService {
 		});
 	}
 
+	// 프로필 생성 (회원가입 시 자동생성에 사용 중)
+	async createProfile(user: User): Promise<Profile> {
+		// 프로필 생성
+		const profile = await this.profileRepository.createProfile(user, new ProfileDto());
+
+		// 생성 후 모종의 이유로 없으면 에러던짐
+		if (!profile) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		return profile;
+	}
+
 	// 프로필 업데이트
 	async updateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userService.getUserByidx(requsetUserIdx);
+		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
 		// 유저 없으면 리턴
 		if (!user) {

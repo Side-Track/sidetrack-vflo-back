@@ -1,6 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from '../user/dto/user-credential.dto';
 import { EmailVerificationRepository } from './repositories/email_verification.repository';
@@ -11,9 +10,6 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ResponseCode } from 'src/response.code.enum';
 import { EmailVerification } from './entities/email_verification.entity';
-import { ProfileService } from 'src/profile/profile.service';
-import { ProfileDto } from 'src/profile/dto/profile.dto';
-import { Profile } from 'src/profile/entities/profile.entity';
 import { ResponseMessage } from 'src/response.message.enum';
 import { UserService } from 'src/user/user.service';
 
@@ -28,10 +24,6 @@ export class AuthService {
 
 		@Inject(forwardRef(() => UserService))
 		private readonly userService: UserService,
-
-		// ProfileService 는 AuthService 참조함. 순환참조 제거하기 위한 방법
-		@Inject(forwardRef(() => ProfileService))
-		private readonly profileService: ProfileService,
 
 		private readonly mailerService: MailerService,
 		private jwtService: JwtService,
@@ -180,16 +172,6 @@ export class AuthService {
 
 		// 유저 만들기가 모종의 이유로 실패 시
 		if (!user) {
-			throw new HttpException(
-				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
-
-		const profile = await this.profileService.createProfile(user.idx, new ProfileDto());
-
-		// 프로필 자동생성이 모종의 이유로 실패 시
-		if (!profile) {
 			throw new HttpException(
 				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
 				HttpStatus.INTERNAL_SERVER_ERROR,

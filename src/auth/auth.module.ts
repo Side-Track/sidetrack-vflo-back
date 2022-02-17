@@ -13,7 +13,6 @@ import { UserModule } from 'src/user/user.module';
 
 @Module({
 	imports: [
-		forwardRef(() => ProfileModule),
 		forwardRef(() => UserModule),
 		TypeOrmModule.forFeature([UserRepository, EmailVerificationRepository]),
 		JwtModule.registerAsync({

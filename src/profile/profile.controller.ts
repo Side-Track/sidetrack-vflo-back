@@ -21,7 +21,7 @@ export class ProfileController {
 	createProfile(@Req() req, @Body() profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx
 		const requsetUserIdx = req.user.idx;
-		return this.profileService.createProfile(requsetUserIdx, profileDto);
+		return this.profileService.explicitCreateProfile(requsetUserIdx, profileDto);
 	}
 
 	@Post('/update_profile')

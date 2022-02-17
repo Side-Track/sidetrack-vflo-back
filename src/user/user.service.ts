@@ -1,14 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { ResponseDto } from 'src/dto/response.dto';
+import { Profile } from 'src/profile/entities/profile.entity';
+import { ProfileService } from 'src/profile/profile.service';
+import { ResponseCode } from 'src/response.code.enum';
+import { ResponseMessage } from 'src/response.message.enum';
 import { UserCredentialDto } from './dto/user-credential.dto';
 import { User } from './entities/user.entity';
 import { UserRepository } from './repositories/user.repository';
 
 @Injectable()
 export class UserService {
-	constructor(private readonly userRepository: UserRepository) {}
+	constructor(
+		private readonly userRepository: UserRepository,
+		// UserService 는 ProfileService 참조함. 순환참조 제거하기 위한 방법
+		@Inject(forwardRef(() => ProfileService))
+		private readonly profileService: ProfileService,
+	) {}
 
 	// 유저 찾기
-	async getUserByidx(idx: number): Promise<User> {
+	async getUserByIdx(idx: number): Promise<User> {
 		return await this.userRepository.findOne({ idx });
 	}
 
@@ -23,7 +33,19 @@ export class UserService {
 
 	// 유저 만들기
 	async createUser(userCredentialDto: UserCredentialDto): Promise<User> {
-		return await this.userRepository.createUser(userCredentialDto);
+		const user: User = await this.userRepository.createUser(userCredentialDto);
+
+		const profile: Profile = await this.profileService.createProfile(user);
+
+		// 프로필 자동생성이 모종의 이유로 실패 시
+		if (!profile) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		return user;
 	}
 
 	// 임시 비밀번호 생성

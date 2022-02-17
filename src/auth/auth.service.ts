@@ -21,25 +21,15 @@ import { ResponseMessage } from 'src/response.message.enum';
 
 @Injectable()
 export class AuthService {
-	// Cause : any method in repository occur 500 internal error.
-	// Solve : @InjectionRepository() 대신 커넥션을 이용해서 다음과 같이 정의하는 방법을 사용함.
-	// private userRepository: UserRepository;
-	// private emailVerficiationRepository: EmailVerificationRepository;
-	// private profileRepository: ProfileRepository;
-	// constructor(
-	// 	private readonly connection: Connection,
-	// 	private readonly mailerService: MailerService,
-	// 	private jwtService: JwtService,
-	// ) {
-	// 	this.userRepository = this.connection.getCustomRepository(UserRepository);
-	// 	this.emailVerficiationRepository = this.connection.getCustomRepository(EmailVerificationRepository);
-	// 	this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
-	// }
+	// @InjectRepository() 데코레이터는 기본 TypeOrm 기본 리포사용시에만 사용
+	// ex : private userRepository : Repository<User> 와 같이 엔티티 사용하여 쓸 때만 이용
 
+	// 현재와 같이 Repository 파일이 따로 존재 시에는 아래와 같이 하는게 좋다.
 	constructor(
 		private userRepository: UserRepository,
 		private emailVerficiationRepository: EmailVerificationRepository,
 
+		// ProfileService 는 AuthService 참조함. 순환참조 제거하기 위한 방법
 		@Inject(forwardRef(() => ProfileService))
 		private readonly ProfileService: ProfileService,
 

@@ -31,6 +31,7 @@ export class ProfileService {
 	constructor(
 		private profileRepository: ProfileRepository,
 
+		// AuthService 는 ProfileService 참조함. 순환참조 제거하기 위한 방법
 		@Inject(forwardRef(() => AuthService))
 		private readonly authService: AuthService,
 	) {}

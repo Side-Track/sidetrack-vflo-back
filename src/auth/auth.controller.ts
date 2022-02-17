@@ -3,8 +3,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { AuthService } from './auth.service';
 import { EmailVerificationDto } from './dto/email-verification.dto';
-import { UserCredentialDto } from './dto/user-credential.dto';
-import { User } from './entities/user.entity';
+import { UserCredentialDto } from '../user/dto/user-credential.dto';
+import { User } from '../user/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {

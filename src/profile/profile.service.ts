@@ -6,8 +6,8 @@ import {
 	Injectable,
 	InternalServerErrorException,
 } from '@nestjs/common';
-import { User } from 'src/auth/entities/user.entity';
-import { UserRepository } from 'src/auth/repositories/user.repository';
+import { User } from 'src/user/entities/user.entity';
+import { UserRepository } from 'src/user/repositories/user.repository';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';
@@ -17,6 +17,7 @@ import { ResponseCode } from 'src/response.code.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseMessage } from 'src/response.message.enum';
 import { AuthService } from 'src/auth/auth.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class ProfileService {
@@ -31,9 +32,9 @@ export class ProfileService {
 	constructor(
 		private profileRepository: ProfileRepository,
 
-		// AuthService 는 ProfileService 참조함. 순환참조 제거하기 위한 방법
-		@Inject(forwardRef(() => AuthService))
-		private readonly authService: AuthService,
+		// UserService 는 ProfileService 참조함. 순환참조 제거하기 위한 방법
+		@Inject(forwardRef(() => UserService))
+		private readonly userService: UserService,
 	) {}
 
 	// 닉네임 중복체크
@@ -88,7 +89,7 @@ export class ProfileService {
 	// 프로필 생성
 	async createProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.authService.getUserByidx(requsetUserIdx);
+		const user: User = await this.userService.getUserByidx(requsetUserIdx);
 
 		// 유저 없으면 에러
 		if (!user) {
@@ -123,7 +124,7 @@ export class ProfileService {
 	// 프로필 업데이트
 	async updateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.authService.getUserByidx(requsetUserIdx);
+		const user: User = await this.userService.getUserByidx(requsetUserIdx);
 
 		// 유저 없으면 리턴
 		if (!user) {

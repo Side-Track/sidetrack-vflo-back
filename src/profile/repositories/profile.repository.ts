@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
-import { User } from 'src/auth/entities/user.entity';
+import { User } from 'src/user/entities/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, Repository } from 'typeorm';
 import { ProfileDto } from '../dto/profile.dto';

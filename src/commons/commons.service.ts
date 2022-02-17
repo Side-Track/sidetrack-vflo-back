@@ -4,7 +4,7 @@ import { Connection } from 'typeorm';
 import { GenreRepository } from './repositories/genre.repository';
 import { ResponseCode } from 'src/response.code.enum';
 import { GenreDto } from './dto/genre.dto';
-import { User } from 'src/auth/entities/user.entity';
+import { User } from 'src/user/entities/user.entity';
 import { ResponseMessage } from 'src/response.message.enum';
 
 @Injectable()

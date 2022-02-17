@@ -2,22 +2,20 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseDto } from 'src/dto/response.dto';
-import { UserCredentialDto } from './dto/user-credential.dto';
+import { UserCredentialDto } from '../user/dto/user-credential.dto';
 import { EmailVerificationRepository } from './repositories/email_verification.repository';
-import { User } from './entities/user.entity';
-import { UserRepository } from './repositories/user.repository';
+import { User } from '../user/entities/user.entity';
 import { EmailVerificationDto } from './dto/email-verification.dto';
 
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ResponseCode } from 'src/response.code.enum';
 import { EmailVerification } from './entities/email_verification.entity';
-import { Connection } from 'typeorm';
 import { ProfileService } from 'src/profile/profile.service';
 import { ProfileDto } from 'src/profile/dto/profile.dto';
-import { ProfileRepository } from 'src/profile/repositories/profile.repository';
 import { Profile } from 'src/profile/entities/profile.entity';
 import { ResponseMessage } from 'src/response.message.enum';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -26,12 +24,14 @@ export class AuthService {
 
 	// 현재와 같이 Repository 파일이 따로 존재 시에는 아래와 같이 하는게 좋다.
 	constructor(
-		private userRepository: UserRepository,
 		private emailVerficiationRepository: EmailVerificationRepository,
+
+		@Inject(forwardRef(() => UserService))
+		private readonly userService: UserService,
 
 		// ProfileService 는 AuthService 참조함. 순환참조 제거하기 위한 방법
 		@Inject(forwardRef(() => ProfileService))
-		private readonly ProfileService: ProfileService,
+		private readonly profileService: ProfileService,
 
 		private readonly mailerService: MailerService,
 		private jwtService: JwtService,
@@ -39,7 +39,7 @@ export class AuthService {
 
 	// 중복 이메일 검사
 	async checkDuplicateEmail(email: string): Promise<ResponseDto> {
-		const count = await this.userRepository.count({ email });
+		const count = await this.userService.getUserCountByEmail(email);
 
 		if (count == 0) {
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Sign up available', {
@@ -64,7 +64,7 @@ export class AuthService {
 	// 인증 메일 발송
 	async sendVerificationMail(email: string): Promise<ResponseDto> {
 		// 이미 인증받은 유저인지 검사
-		const user = await this.userRepository.findOne({ email: email });
+		const user = await this.userService.getUserByEmail(email);
 		const verified = await this.emailVerficiationRepository.findVerifiedEmailVerificationByEmail(email);
 
 		// 이미 인증된 유저라면 response error return
@@ -176,7 +176,7 @@ export class AuthService {
 		}
 
 		// 유저 만들기
-		const user: User = await this.userRepository.createUser(userCredentialDto);
+		const user: User = await this.userService.createUser(userCredentialDto);
 
 		// 유저 만들기가 모종의 이유로 실패 시
 		if (!user) {
@@ -186,7 +186,7 @@ export class AuthService {
 			);
 		}
 
-		const profile = await this.ProfileService.createProfile(user.idx, new ProfileDto());
+		const profile = await this.profileService.createProfile(user.idx, new ProfileDto());
 
 		// 프로필 자동생성이 모종의 이유로 실패 시
 		if (!profile) {
@@ -206,7 +206,7 @@ export class AuthService {
 		const { email, password } = userCredentialDto;
 
 		// 받은 데이터 기준으로 db 검색
-		const user = await this.userRepository.findOne({ email: email });
+		const user = await this.userService.getUserByEmail(email);
 
 		// 존재하지 않는 유저일경우
 		// 오류 메세지는 보안을 위해 이메일이나 비밀번호가 잘못되었다고 띄움
@@ -255,7 +255,7 @@ export class AuthService {
 	// 비밀번호 리셋
 	// TODO : 인증절차 거쳐야 할 듯
 	async resetPassword(email: string): Promise<ResponseDto> {
-		let user = await this.userRepository.findOne({ email });
+		let user = await this.userService.getUserByEmail(email);
 
 		// 해당 이메일 계정이 없으면
 		if (user == undefined) {
@@ -268,7 +268,7 @@ export class AuthService {
 		// 계정이 있다면 ============
 
 		// 임시비밀번호 생성
-		const tempPassword = await this.userRepository.createTemporaryPassword(user);
+		const tempPassword = await this.userService.createTemporaryPassword(user);
 
 		// 이메일 내용 작성
 		let sendedMail = undefined;
@@ -321,10 +321,5 @@ export class AuthService {
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
-	}
-
-	//
-	async getUserByidx(idx: number): Promise<User> {
-		return await this.userRepository.findOne({ idx });
 	}
 }

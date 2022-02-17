@@ -4,7 +4,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import { UserCredentialDto } from '../dto/user-credential.dto';
 import { User } from '../entities/user.entity';
 import * as bcrypt from 'bcryptjs';
-import authPolicy from '../auth.policy';
+import authPolicy from '../../auth/auth.policy';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
 

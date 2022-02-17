@@ -15,7 +15,7 @@ import { EmailVerification } from './entities/email_verification.entity';
 import { Connection } from 'typeorm';
 import { ProfileService } from 'src/profile/profile.service';
 import { ProfileDto } from 'src/profile/dto/profile.dto';
-import { ProfileRepository } from 'src/profile/profile.repository';
+import { ProfileRepository } from 'src/profile/repositories/profile.repository';
 import { Profile } from 'src/profile/entities/profile.entity';
 import { ResponseMessage } from 'src/response.message.enum';
 

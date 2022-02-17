@@ -4,7 +4,7 @@ import { UserRepository } from 'src/auth/repositories/user.repository';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';
-import { ProfileRepository } from './profile.repository';
+import { ProfileRepository } from './repositories/profile.repository';
 
 import { ResponseCode } from 'src/response.code.enum';
 import { InjectRepository } from '@nestjs/typeorm';

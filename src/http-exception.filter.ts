@@ -5,6 +5,7 @@ import {
 	HttpException,
 	HttpStatus,
 	InternalServerErrorException,
+	Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ResponseDto } from './dto/response.dto';
@@ -39,10 +40,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			errorString = errorString.toUpperCase().replaceAll(' ', '_');
 
 			// 자동으로 던저진 에러의 메세지는 배열형식이므로 이것을 개행문자로 붙여줍니다.
-			let message = messageList.join('\n');
+			const message = messageList.join('\n');
 
 			// responseDto 의 데이터 영역에 기존 에러의 리스폰스 객체를 넣어서 원문을 확인 할 수 있도록 합니다.
-			let responseDto = new ResponseDto(statusCode, errorString, true, message, { response });
+			const responseDto = new ResponseDto(statusCode, errorString, true, message, { response });
 
 			response = responseDto;
 		}
@@ -52,6 +53,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			url: req.url,
 			response,
 		};
+
+		Logger.error(log);
 
 		res.status((exception as HttpException).getStatus()).json(response);
 	}

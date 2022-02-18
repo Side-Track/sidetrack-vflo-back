@@ -41,18 +41,16 @@ export class EmailVerificationRepository extends Repository<EmailVerification> {
 	}
 
 	// 인증 가능한 이메일 - 인증코드 페어 찾기
-	async findAvailableEmailVerification(emailVerificationDto: EmailVerificationDto): Promise<EmailVerification> {
+	async findVerficationEmailCodePair(emailVerificationDto: EmailVerificationDto): Promise<EmailVerification> {
 		const { email, code } = emailVerificationDto;
 
 		// 이메일과 생성된 코드로 검색
 		const query = this.createQueryBuilder('email_verification');
-		query
-			.where('expired_date >= :currentDate', { currentDate: new Date() })
-			.andWhere('email = :email', { email: email })
-			.andWhere('verification_code = :code', { code: code })
-			.andWhere({
-				verified_date: IsNull(),
-			});
+		query.where('email = :email', { email: email }).andWhere('verification_code = :code', { code: code });
+		// .andWhere({
+		// 	verified_date: IsNull(),
+		// });
+		// .where('expired_date >= :currentDate', { currentDate: new Date() })
 
 		// 검색 결과
 		return await query.getOne();

@@ -32,20 +32,11 @@ export class UserService {
 	}
 
 	// 유저 만들기
-	async createUser(userCredentialDto: UserCredentialDto): Promise<User> {
+	async createUser(userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
 		const user: User = await this.userRepository.createUser(userCredentialDto);
-
 		const profile: Profile = await this.profileService.createProfile(user);
 
-		// 프로필 자동생성이 모종의 이유로 실패 시
-		if (!profile) {
-			throw new HttpException(
-				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
-
-		return user;
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, { user, profile });
 	}
 
 	// 임시 비밀번호 생성

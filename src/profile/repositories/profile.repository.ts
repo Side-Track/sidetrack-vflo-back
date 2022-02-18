@@ -35,16 +35,26 @@ export class ProfileRepository extends Repository<Profile> {
 		// 요청에서 닉네임과 바이오 가져오기
 		let { nickname, bio } = profileDto;
 
-		// 닉네임이 비었을 경우 이메일에서 가져옴
-		nickname = nickname == undefined ? user.email.split('@')[0] : nickname;
-
 		// 프로필 만들기
 		let profile = this.create({ user, nickname, bio });
 
 		try {
 			return await this.save(profile);
 		} catch (err) {
-			// 에러던지기
+			// 이미 같은것이 존재할 때 (Unique field 에 같은게 들어가려고 할 때)
+			if (err.code === 'ER_DUP_ENTRY') {
+				throw new HttpException(
+					new ResponseDto(
+						HttpStatus.CONFLICT,
+						ResponseCode.ALREADY_EXIST_NICKNAME,
+						true,
+						ResponseMessage.ALREADY_EXIST_NICKNAME,
+					),
+					HttpStatus.CONFLICT,
+				);
+			}
+
+			// 기타 에러
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,

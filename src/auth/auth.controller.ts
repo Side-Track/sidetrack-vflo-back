@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { EmailVerificationDto } from './dto/email-verification.dto';
 import { UserCredentialDto } from '../user/dto/user-credential.dto';
 import { User } from '../user/entities/user.entity';
+import { SignInCredentialDto } from './dto/sign-in-credential.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -39,8 +40,8 @@ export class AuthController {
 	// 로그인
 	@Get('/sign_in')
 	@UsePipes(ValidationPipe)
-	signIn(@Body() userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
-		return this.authService.signIn(userCredentialDto);
+	signIn(@Body() signInCredentialDto: SignInCredentialDto): Promise<ResponseDto> {
+		return this.authService.signIn(signInCredentialDto);
 	}
 
 	// 비밀번호 리셋

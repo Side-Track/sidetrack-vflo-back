@@ -12,6 +12,7 @@ import { ResponseCode } from 'src/response.code.enum';
 import { EmailVerification } from './entities/email_verification.entity';
 import { ResponseMessage } from 'src/response.message.enum';
 import { UserService } from 'src/user/user.service';
+import { SignInCredentialDto } from './dto/sign-in-credential.dto';
 
 @Injectable()
 export class AuthService {
@@ -204,9 +205,9 @@ export class AuthService {
 	}
 
 	// 로그인
-	async signIn(userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+	async signIn(signInCredentialDto: SignInCredentialDto): Promise<ResponseDto> {
 		// DTO 로 부터 데이터 받음
-		const { email, password } = userCredentialDto;
+		const { email, password } = signInCredentialDto;
 
 		// 받은 데이터 기준으로 db 검색
 		const user = await this.userService.getUserByEmail(email);

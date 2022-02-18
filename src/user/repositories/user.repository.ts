@@ -7,16 +7,17 @@ import * as bcrypt from 'bcryptjs';
 import authPolicy from '../../auth/auth.policy';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
+import { EmailVerification } from 'src/auth/entities/email_verification.entity';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
 	// 유저 생성
-	async createUser(userCredentialDto: UserCredentialDto): Promise<User> {
+	async createUser(userCredentialDto: UserCredentialDto, emailVerification: EmailVerification): Promise<User> {
 		const { email, password } = userCredentialDto;
 
 		const salt = await bcrypt.genSalt();
 		const hashedPassword = await bcrypt.hash(password, salt);
-		const user = this.create({ email: email, password: hashedPassword });
+		const user = this.create({ email: email, password: hashedPassword, email_verification: emailVerification });
 
 		try {
 			return await this.save(user);

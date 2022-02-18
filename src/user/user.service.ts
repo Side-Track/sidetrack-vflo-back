@@ -1,4 +1,5 @@
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { EmailVerification } from 'src/auth/entities/email_verification.entity';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Profile } from 'src/profile/entities/profile.entity';
 import { ProfileService } from 'src/profile/profile.service';
@@ -32,8 +33,8 @@ export class UserService {
 	}
 
 	// 유저 만들기
-	async createUser(userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
-		const user: User = await this.userRepository.createUser(userCredentialDto);
+	async createUser(userCredentialDto: UserCredentialDto, emailVerification: EmailVerification): Promise<ResponseDto> {
+		const user: User = await this.userRepository.createUser(userCredentialDto, emailVerification);
 		const profile: Profile = await this.profileService.createProfile(user);
 
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, { user, profile });

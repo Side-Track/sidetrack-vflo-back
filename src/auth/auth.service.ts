@@ -59,7 +59,7 @@ export class AuthService {
 		// 이미 인증받은 이메일인지 검사
 		const verified = await this.emailVerficiationRepository.findVerifiedEmailVerificationByEmail(email);
 
-		// 이미 인증된 유저라면 response error return
+		// 이미 인증된 이메일이라면 response error return
 		if (verified != undefined) {
 			const response = new ResponseDto(
 				HttpStatus.OK,

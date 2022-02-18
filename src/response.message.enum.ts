@@ -19,6 +19,7 @@ export enum ResponseMessage {
 
 	// Profile
 	ALREADY_EXIST_NICKNAME = '이미 존재하는 닉네임입니다.',
+	ALREADY_USER_PROFILE_EXIST = '이미 유저의 프로필이 존재합니다.',
 
 	//Commons
 	ALREADY_EXIST_GENRE = '이미 존재하는 장르입니다.',

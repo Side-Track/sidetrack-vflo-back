@@ -36,6 +36,20 @@ export class ProfileRepository extends Repository<Profile> {
 		// 요청에서 닉네임과 바이오 가져오기
 		let { nickname, bio } = createProfileDto;
 
+		// 닉네임 중복인지 확인
+		const count = await this.count({ nickname });
+		if (count > 0) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.CONFLICT,
+					ResponseCode.ALREADY_EXIST_NICKNAME,
+					true,
+					ResponseMessage.ALREADY_EXIST_NICKNAME,
+				),
+				HttpStatus.CONFLICT,
+			);
+		}
+
 		// 프로필 만들기
 		let profile = this.create({ user, nickname, bio });
 
@@ -47,9 +61,9 @@ export class ProfileRepository extends Repository<Profile> {
 				throw new HttpException(
 					new ResponseDto(
 						HttpStatus.CONFLICT,
-						ResponseCode.ALREADY_EXIST_NICKNAME,
+						ResponseCode.ALREADY_USER_PROFILE_EXIST,
 						true,
-						ResponseMessage.ALREADY_EXIST_NICKNAME,
+						ResponseMessage.ALREADY_USER_PROFILE_EXIST,
 					),
 					HttpStatus.CONFLICT,
 				);

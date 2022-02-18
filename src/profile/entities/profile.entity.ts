@@ -2,7 +2,7 @@ import { User } from 'src/user/entities/user.entity';
 import { BaseEntity, Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 @Entity()
-@Unique(['nickname'])
+@Unique(['nickname', 'user'])
 export class Profile extends BaseEntity {
 	@PrimaryGeneratedColumn()
 	idx: number;

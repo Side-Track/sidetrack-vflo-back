@@ -99,6 +99,7 @@ export class ProfileService {
 
 		// 프로필 생성
 		const profile = await this.profileRepository.createProfile(user, createProfileDto);
+		delete profile.user;
 
 		// 프로필 리턴
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 성공적으로 생성되었습니다.', {

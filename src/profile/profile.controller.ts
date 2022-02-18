@@ -5,6 +5,8 @@ import { ProfileDto } from './dto/profile.dto';
 import { ProfileService } from './profile.service';
 import { ResponseCode } from 'src/response.code.enum';
 import GlobalPipes from '../pipes/global-pipes.pipe';
+import { CreateProfileDto } from './dto/create-profile.dto';
+import { GetUser } from 'src/user/decorators/get-user.decorator';
 
 @Controller('profile')
 @UseGuards(AuthGuard())
@@ -18,17 +20,17 @@ export class ProfileController {
 
 	@Post('/create_profile')
 	@UsePipes(ValidationPipe)
-	createProfile(@Req() req, @Body() profileDto: ProfileDto): Promise<ResponseDto> {
+	createProfile(@GetUser() user, @Body() createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx
-		const requsetUserIdx = req.user.idx;
-		return this.profileService.explicitCreateProfile(requsetUserIdx, profileDto);
+		const requsetUserIdx = user.idx;
+		return this.profileService.explicitCreateProfile(requsetUserIdx, createProfileDto);
 	}
 
 	@Post('/update_profile')
 	@UsePipes(ValidationPipe)
-	updateProfile(@Req() req, @Body() profileDto: ProfileDto): Promise<ResponseDto> {
+	updateProfile(@GetUser() user, @Body() createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx
-		const requsetUserIdx = req.user.idx;
-		return this.profileService.updateProfile(requsetUserIdx, profileDto);
+		const requsetUserIdx = user.idx;
+		return this.profileService.updateProfile(requsetUserIdx, createProfileDto);
 	}
 }

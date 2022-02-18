@@ -19,6 +19,7 @@ import { ResponseMessage } from 'src/response.message.enum';
 import { AuthService } from 'src/auth/auth.service';
 import { UserService } from 'src/user/user.service';
 import { Profile } from './entities/profile.entity';
+import { CreateProfileDto } from './dto/create-profile.dto';
 
 @Injectable()
 export class ProfileService {
@@ -79,7 +80,7 @@ export class ProfileService {
 	}
 
 	// 명시적 프로필 생성 (회원가입 시 자동생성 안할 경우 명시적으로 생성)
-	async explicitCreateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
+	async explicitCreateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
 		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
@@ -97,7 +98,7 @@ export class ProfileService {
 		}
 
 		// 프로필 생성
-		const profile = await this.profileRepository.createProfile(user, profileDto);
+		const profile = await this.profileRepository.createProfile(user, createProfileDto);
 
 		// 프로필 리턴
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 성공적으로 생성되었습니다.', {
@@ -108,7 +109,7 @@ export class ProfileService {
 	// 프로필 생성 (회원가입 시 자동생성에 사용 중)
 	async createProfile(user: User): Promise<Profile> {
 		// 프로필 DTO
-		let tempProfileDto = new ProfileDto();
+		let tempProfileDto = new CreateProfileDto();
 		tempProfileDto.nickname = undefined;
 
 		// 닉네임 이메일에서 가져옴
@@ -137,7 +138,7 @@ export class ProfileService {
 	}
 
 	// 프로필 업데이트
-	async updateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
+	async updateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
 		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
@@ -154,6 +155,6 @@ export class ProfileService {
 			);
 		}
 
-		return await this.profileRepository.updateProfile(user, profileDto);
+		return await this.profileRepository.updateProfile(user, createProfileDto);
 	}
 }

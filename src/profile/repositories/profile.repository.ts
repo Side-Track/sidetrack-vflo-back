@@ -6,6 +6,7 @@ import { ProfileDto } from '../dto/profile.dto';
 import { Profile } from '../entities/profile.entity';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
+import { CreateProfileDto } from '../dto/create-profile.dto';
 
 @EntityRepository(Profile)
 export class ProfileRepository extends Repository<Profile> {
@@ -31,9 +32,9 @@ export class ProfileRepository extends Repository<Profile> {
 		return existNicknameMap;
 	}
 
-	async createProfile(user: User, profileDto: ProfileDto): Promise<Profile> {
+	async createProfile(user: User, createProfileDto: CreateProfileDto): Promise<Profile> {
 		// 요청에서 닉네임과 바이오 가져오기
-		let { nickname, bio } = profileDto;
+		let { nickname, bio } = createProfileDto;
 
 		// 프로필 만들기
 		let profile = this.create({ user, nickname, bio });
@@ -67,9 +68,9 @@ export class ProfileRepository extends Repository<Profile> {
 		}
 	}
 
-	async updateProfile(user: User, profileDto: ProfileDto): Promise<ResponseDto> {
+	async updateProfile(user: User, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 요청에서 닉네임과 바이오 가져오기
-		const { nickname, bio } = profileDto;
+		const { nickname, bio } = createProfileDto;
 
 		// 프로필 찾기
 		let profile = await this.findOne({ user: user });

@@ -5,9 +5,10 @@ import { ProfileController } from './profile.controller';
 import { ProfileRepository } from '../entities/profile/profile.repository';
 import { ProfileService } from './profile.service';
 import { UserModule } from 'src/user/user.module';
+import { UserRepository } from 'src/entities/user/user.repository';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([ProfileRepository]), forwardRef(() => UserModule), forwardRef(() => AuthModule)],
+	imports: [TypeOrmModule.forFeature([ProfileRepository, UserRepository]), AuthModule],
 	controllers: [ProfileController],
 	providers: [ProfileService],
 	exports: [ProfileService],

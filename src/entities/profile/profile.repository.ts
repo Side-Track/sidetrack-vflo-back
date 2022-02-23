@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
 import { User } from 'src/entities/user/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
-import { EntityRepository, Repository } from 'typeorm';
+import { EntityRepository, getConnection, Repository } from 'typeorm';
 import { ProfileDto } from '../../profile/dto/profile.dto';
 import { Profile } from './profile.entity';
 import { ResponseCode } from 'src/response.code.enum';
@@ -51,11 +51,22 @@ export class ProfileRepository extends Repository<Profile> {
 		}
 
 		// 프로필 만들기
-		let profile = this.create({ user, nickname, bio });
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
 
+		await queryRunner.startTransaction();
 		try {
-			return await this.save(profile);
+			let profile = this.create({ user, nickname, bio });
+
+			const createdProfile = await this.save(profile);
+
+			await queryRunner.commitTransaction();
+
+			return createdProfile;
 		} catch (err) {
+			// rollback
+			await queryRunner.rollbackTransaction();
+
 			// 이미 같은것이 존재할 때 (Unique field 에 같은게 들어가려고 할 때)
 			if (err.code === 'ER_DUP_ENTRY') {
 				throw new HttpException(
@@ -79,6 +90,8 @@ export class ProfileRepository extends Repository<Profile> {
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
+		} finally {
+			await queryRunner.release();
 		}
 	}
 
@@ -104,20 +117,22 @@ export class ProfileRepository extends Repository<Profile> {
 		profile.nickname = nickname;
 		profile.bio = bio;
 
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
 		try {
 			profile = await this.save(profile);
 
+			await queryRunner.commitTransaction();
+
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 업데이트 되었습니다.', { profile });
 		} catch (err) {
-			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.INTERNAL_SERVER_ERROR,
-					true,
-					ResponseMessage.INTERNAL_SERVER_ERROR,
-				),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
+			// rollback
+			await queryRunner.rollbackTransaction();
+		} finally {
+			await queryRunner.release();
 		}
 	}
 

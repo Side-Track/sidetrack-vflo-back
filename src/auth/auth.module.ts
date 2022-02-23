@@ -10,11 +10,11 @@ import { EmailVerificationRepository } from '../entities/email_verification/emai
 import { JwtStrategy } from './jwt.strategy';
 import { UserRepository } from '../entities/user/user.repository';
 import { UserModule } from 'src/user/user.module';
+import { ProfileRepository } from 'src/entities/profile/profile.repository';
 
 @Module({
 	imports: [
-		forwardRef(() => UserModule),
-		TypeOrmModule.forFeature([UserRepository, EmailVerificationRepository]),
+		TypeOrmModule.forFeature([UserRepository, EmailVerificationRepository, ProfileRepository]),
 		JwtModule.registerAsync({
 			// .env 에 등록되어 있는 것을 가져오는것이 비동기 작업이므로, 초기화 시에 env 요소를 못불러온 상태일 수 있음.
 			// 따라서 registerAsync, ConfigService 를 사용해 동기적으로 작업함

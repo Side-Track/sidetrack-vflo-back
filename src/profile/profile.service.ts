@@ -24,11 +24,9 @@ import { CreateProfileDto } from './dto/create-profile.dto';
 @Injectable()
 export class ProfileService {
 	constructor(
-		private profileRepository: ProfileRepository,
+		private readonly profileRepository: ProfileRepository,
 
-		// ProfileService 는 UserService 참조함. 순환참조 제거하기 위한 방법
-		@Inject(forwardRef(() => UserService))
-		private readonly userService: UserService,
+		private readonly userRepository: UserRepository,
 	) {}
 
 	// 닉네임 중복체크
@@ -82,7 +80,7 @@ export class ProfileService {
 	// 명시적 프로필 생성 (회원가입 시 자동생성 안할 경우 명시적으로 생성)
 	async explicitCreateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
+		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
 
 		// 유저 없으면 에러
 		if (!user) {
@@ -141,7 +139,7 @@ export class ProfileService {
 	// 프로필 업데이트
 	async updateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
+		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
 
 		// 유저 없으면 리턴
 		if (!user) {

@@ -3,8 +3,8 @@ import { ResponseDto } from 'src/dto/response.dto';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
 import { EntityRepository, Repository } from 'typeorm';
-import { GenreDto } from '../dto/genre.dto';
-import { Genre } from '../entities/genre.entity';
+import { GenreDto } from '../../commons/dto/genre.dto';
+import { Genre } from './genre.entity';
 
 @EntityRepository(Genre)
 export class GenreRepository extends Repository<Genre> {

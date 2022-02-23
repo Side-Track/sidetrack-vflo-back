@@ -2,14 +2,14 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { UserCredentialDto } from '../user/dto/user-credential.dto';
-import { EmailVerificationRepository } from './repositories/email_verification.repository';
-import { User } from '../user/entities/user.entity';
+import { EmailVerificationRepository } from '../entities/email_verification/email_verification.repository';
+import { User } from '../entities/user/user.entity';
 import { EmailVerificationDto } from './dto/email-verification.dto';
 
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ResponseCode } from 'src/response.code.enum';
-import { EmailVerification } from './entities/email_verification.entity';
+import { EmailVerification } from '../entities/email_verification/email_verification.entity';
 import { ResponseMessage } from 'src/response.message.enum';
 import { UserService } from 'src/user/user.service';
 import { SignInCredentialDto } from './dto/sign-in-credential.dto';

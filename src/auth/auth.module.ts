@@ -6,9 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProfileModule } from 'src/profile/profile.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { EmailVerificationRepository } from './repositories/email_verification.repository';
+import { EmailVerificationRepository } from '../entities/email_verification/email_verification.repository';
 import { JwtStrategy } from './jwt.strategy';
-import { UserRepository } from '../user/repositories/user.repository';
+import { UserRepository } from '../entities/user/user.repository';
 import { UserModule } from 'src/user/user.module';
 
 @Module({

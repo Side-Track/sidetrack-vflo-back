@@ -1,4 +1,4 @@
-import { EmailVerification } from 'src/auth/entities/email_verification.entity';
+import { EmailVerification } from 'src/entities/email_verification/email_verification.entity';
 import {
 	BaseEntity,
 	Column,

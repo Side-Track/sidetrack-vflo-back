@@ -1,9 +1,9 @@
 import { HttpException, HttpStatus, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, IsNull, Not, Repository } from 'typeorm';
-import { EmailVerification } from '../entities/email_verification.entity';
-import { EmailVerificationDto } from '../dto/email-verification.dto';
-import authPolicy from '../auth.policy';
+import { EmailVerification } from './email_verification.entity';
+import { EmailVerificationDto } from '../../auth/dto/email-verification.dto';
+import authPolicy from '../../auth/auth.policy';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
 

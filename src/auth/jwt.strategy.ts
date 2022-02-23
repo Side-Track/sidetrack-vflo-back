@@ -5,8 +5,8 @@ import { ResponseDto } from 'src/dto/response.dto';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
 import { Connection } from 'typeorm';
-import { User } from '../user/entities/user.entity';
-import { UserRepository } from '../user/repositories/user.repository';
+import { User } from '../entities/user/user.entity';
+import { UserRepository } from '../entities/user/user.repository';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

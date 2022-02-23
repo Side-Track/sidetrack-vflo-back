@@ -1,13 +1,13 @@
 import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { EmailVerification } from 'src/auth/entities/email_verification.entity';
+import { EmailVerification } from 'src/entities/email_verification/email_verification.entity';
 import { ResponseDto } from 'src/dto/response.dto';
-import { Profile } from 'src/profile/entities/profile.entity';
+import { Profile } from 'src/entities/profile/profile.entity';
 import { ProfileService } from 'src/profile/profile.service';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
 import { UserCredentialDto } from './dto/user-credential.dto';
-import { User } from './entities/user.entity';
-import { UserRepository } from './repositories/user.repository';
+import { User } from '../entities/user/user.entity';
+import { UserRepository } from '../entities/user/user.repository';
 
 @Injectable()
 export class UserService {

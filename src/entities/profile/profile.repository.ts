@@ -1,12 +1,12 @@
 import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
-import { User } from 'src/user/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, Repository } from 'typeorm';
-import { ProfileDto } from '../dto/profile.dto';
-import { Profile } from '../entities/profile.entity';
+import { ProfileDto } from '../../profile/dto/profile.dto';
+import { Profile } from './profile.entity';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
-import { CreateProfileDto } from '../dto/create-profile.dto';
+import { CreateProfileDto } from '../../profile/dto/create-profile.dto';
 
 @EntityRepository(Profile)
 export class ProfileRepository extends Repository<Profile> {

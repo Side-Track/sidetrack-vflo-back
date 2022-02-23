@@ -4,7 +4,7 @@ import { ResponseDto } from 'src/dto/response.dto';
 import { AuthService } from './auth.service';
 import { EmailVerificationDto } from './dto/email-verification.dto';
 import { UserCredentialDto } from '../user/dto/user-credential.dto';
-import { User } from '../user/entities/user.entity';
+import { User } from '../entities/user/user.entity';
 import { SignInCredentialDto } from './dto/sign-in-credential.dto';
 
 @Controller('auth')

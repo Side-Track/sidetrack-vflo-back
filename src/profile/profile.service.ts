@@ -6,19 +6,19 @@ import {
 	Injectable,
 	InternalServerErrorException,
 } from '@nestjs/common';
-import { User } from 'src/user/entities/user.entity';
-import { UserRepository } from 'src/user/repositories/user.repository';
+import { User } from 'src/entities/user/user.entity';
+import { UserRepository } from 'src/entities/user/user.repository';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';
-import { ProfileRepository } from './repositories/profile.repository';
+import { ProfileRepository } from '../entities/profile/profile.repository';
 
 import { ResponseCode } from 'src/response.code.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseMessage } from 'src/response.message.enum';
 import { AuthService } from 'src/auth/auth.service';
 import { UserService } from 'src/user/user.service';
-import { Profile } from './entities/profile.entity';
+import { Profile } from '../entities/profile/profile.entity';
 import { CreateProfileDto } from './dto/create-profile.dto';
 
 @Injectable()

@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
-import { GenreRepository } from './repositories/genre.repository';
+import { GenreRepository } from '../entities/common_genre/genre.repository';
 import { ResponseCode } from 'src/response.code.enum';
 import { GenreDto } from './dto/genre.dto';
-import { User } from 'src/user/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 import { ResponseMessage } from 'src/response.message.enum';
 
 @Injectable()

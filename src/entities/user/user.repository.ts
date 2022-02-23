@@ -1,13 +1,13 @@
 import { ConflictException, HttpException, HttpStatus, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, Repository } from 'typeorm';
-import { UserCredentialDto } from '../dto/user-credential.dto';
-import { User } from '../entities/user.entity';
+import { UserCredentialDto } from '../../user/dto/user-credential.dto';
+import { User } from './user.entity';
 import * as bcrypt from 'bcryptjs';
 import authPolicy from '../../auth/auth.policy';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
-import { EmailVerification } from 'src/auth/entities/email_verification.entity';
+import { EmailVerification } from 'src/entities/email_verification/email_verification.entity';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {

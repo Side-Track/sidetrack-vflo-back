@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/user/decorators/get-user.decorator';
-import { User } from 'src/user/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
 import { CommonsService } from './commons.service';
 

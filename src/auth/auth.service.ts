@@ -16,7 +16,7 @@ import { UserRepository } from 'src/entities/user/user.repository';
 import { ProfileRepository } from 'src/entities/profile/profile.repository';
 import { Profile } from 'src/entities/profile/profile.entity';
 import { CreateProfileDto } from 'src/profile/dto/create-profile.dto';
-import { getConnection } from 'typeorm';
+import { Connection, getConnection } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +25,8 @@ export class AuthService {
 
 	// 현재와 같이 Repository 파일이 따로 존재 시에는 아래와 같이 하는게 좋다.
 	constructor(
+		private connection: Connection,
+
 		private emailVerficiationRepository: EmailVerificationRepository,
 
 		private readonly userRepository: UserRepository,
@@ -76,12 +78,13 @@ export class AuthService {
 			throw new HttpException(response, HttpStatus.OK);
 		}
 
+		// 이메일 전송 응답객체
+		let sendedMail = undefined;
+
 		// 인증 받아야 한다면 : 가입은 되었으나 인증은 안된경우와 처음 인증하고 가입절차 밟는 경우
 		// 코드를 생성함
 		const verificationCode = await this.emailVerficiationRepository.createVerificationCode(email);
 
-		// 이메일 내용 작성
-		let sendedMail = undefined;
 		try {
 			sendedMail = await this.mailerService.sendMail({
 				to: email, // list of receivers
@@ -151,26 +154,20 @@ export class AuthService {
 				);
 			}
 
-			// verified_date update
-			verifyObject.verified_date = new Date();
-
-			// 트랜잭션 처리 준비
-			const queryRunner = getConnection().createQueryRunner();
+			const queryRunner = this.connection.createQueryRunner();
 			await queryRunner.connect();
 
-			// 트랜잭션 시작:
 			await queryRunner.startTransaction();
-
 			try {
+				// verified_date update
+				verifyObject.verified_date = new Date();
 				await this.emailVerficiationRepository.save(verifyObject);
-				queryRunner.commitTransaction();
-			} catch (err) {
+				return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '이메일 인증 성공');
+			} catch (error) {
 				await queryRunner.rollbackTransaction();
 			} finally {
-				await queryRunner.release();
+				queryRunner.release();
 			}
-
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '이메일 인증 성공');
 		} else {
 			// 검색 결과 없으면 (해당 이메일에 대해 발행했던 코드가 아니라면)
 			throw new HttpException(
@@ -221,7 +218,7 @@ export class AuthService {
 		let createdProfile: Profile = undefined;
 
 		// create a new query runner and connect
-		const queryRunner = getConnection().createQueryRunner();
+		const queryRunner = this.connection.createQueryRunner();
 		await queryRunner.connect();
 
 		// start transaction:
@@ -324,7 +321,7 @@ export class AuthService {
 		let sendedMail = undefined; // 메일 응답 객체
 
 		// 트랜잭션 준비
-		const queryRunner = getConnection().createQueryRunner();
+		const queryRunner = this.connection.createQueryRunner();
 		await queryRunner.connect();
 
 		// 트랜잭션 시작:

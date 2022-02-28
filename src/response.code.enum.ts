@@ -23,4 +23,5 @@ export enum ResponseCode {
 
 	// Commons
 	ALREADY_EXIST_GENRE = 'ALREADY_EXIST_GENRE',
+	NOT_REGISTERED_GENRE = 'NOT_REGISTERED_GENRE',
 }

@@ -23,4 +23,5 @@ export enum ResponseMessage {
 
 	//Commons
 	ALREADY_EXIST_GENRE = '이미 존재하는 장르입니다.',
+	NOT_REGISTERED_GENRE = '존재하지 않는 장르입니다.',
 }

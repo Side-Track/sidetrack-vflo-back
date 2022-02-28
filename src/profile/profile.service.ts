@@ -76,63 +76,45 @@ export class ProfileService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '사용가능한 닉네임입니다.', responseData);
 	}
 
-	// 명시적 프로필 생성 (회원가입 시 자동생성 안할 경우 명시적으로 생성)
-	async explicitCreateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
-		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
+	// 프로필 생성 (회원가입 시 자동생성에 사용 중)
+	async createProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
-		// 유저 없으면 에러
-		if (!user) {
-			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.NOT_FOUND,
-					ResponseCode.NOT_REGISTERED_USER,
-					true,
-					ResponseMessage.NOT_REGISTERED_USER,
-				),
-				HttpStatus.NOT_FOUND,
-			);
-		}
-
-		// 프로필 생성
-		const profile = await this.profileRepository.createProfile(user, createProfileDto);
-		delete profile.user;
-
-		// 프로필 리턴
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 성공적으로 생성되었습니다.', {
-			profile,
-		});
-	}
-
-	// 프로필 생성 (회원가입 시 자동생성에 사용 중)
-	async createProfile(user: User): Promise<Profile> {
 		// 프로필 DTO
-		let tempProfileDto = new CreateProfileDto();
-		tempProfileDto.nickname = undefined;
+		let tempProfileDto: CreateProfileDto = undefined;
 
-		// 닉네임 이메일에서 가져옴
-		const nickname = user.email;
-
-		// 이메일로 부터 가져온 닉네임을 중복검사 및 추천받음
-		const responseDto: ResponseDto = await this.checkDuplicateNickname(nickname, true);
-		const isUnique: boolean = responseDto.data['isUnique'];
-		const recommendList: string[] = responseDto.data['recommendList'];
-
-		// 중복이 아니라면
-		if (isUnique) {
-			tempProfileDto.nickname = nickname;
+		if (createProfileDto.nickname != undefined || createProfileDto.bio != undefined) {
+			tempProfileDto = createProfileDto;
 		} else {
-			// 중복이라면
-			// 추천 닉네임 배열을 검사
-			if (recommendList.length > 0) {
-				// 난수 인덱스를 만들되, 범위는 0 ~ 추천배열의 크기보다 1 작아야 함.
-				let randomIndex = Math.floor(Math.random() * recommendList.length);
-				// 추천 배열로 부터 임시 프로필 닉네임 지정
-				tempProfileDto.nickname = recommendList[randomIndex];
+			tempProfileDto = new CreateProfileDto();
+
+			// 닉네임 이메일에서 가져옴
+			const nickname = user.email;
+
+			// 이메일로 부터 가져온 닉네임을 중복검사 및 추천받음
+			const responseDto: ResponseDto = await this.checkDuplicateNickname(nickname, true);
+			const isUnique: boolean = responseDto.data['isUnique'];
+			const recommendList: string[] = responseDto.data['recommendList'];
+
+			// 중복이 아니라면
+			if (isUnique) {
+				tempProfileDto.nickname = nickname;
+			} else {
+				// 중복이라면
+				// 추천 닉네임 배열을 검사
+				if (recommendList.length > 0) {
+					// 난수 인덱스를 만들되, 범위는 0 ~ 추천배열의 크기보다 1 작아야 함.
+					let randomIndex = Math.floor(Math.random() * recommendList.length);
+					// 추천 배열로 부터 임시 프로필 닉네임 지정
+					tempProfileDto.nickname = recommendList[randomIndex];
+				}
 			}
 		}
 
-		return await this.profileRepository.createProfile(user, tempProfileDto);
+		const profile: Profile = await this.profileRepository.createProfile(user, tempProfileDto);
+		const profileDto: ProfileDto = new ProfileDto(profile.user.idx, profile.nickname, profile.bio);
+
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'OK', profileDto);
 	}
 
 	// 프로필 업데이트

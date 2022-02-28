@@ -1,6 +1,12 @@
 import { IsNotEmpty, IsNumber, MaxLength } from 'class-validator';
 
 export class ProfileDto {
+	constructor(userIdx: number, nickname: string, bio: string) {
+		this.userIdx = userIdx;
+		this.nickname = nickname;
+		this.bio = bio;
+	}
+
 	@IsNotEmpty()
 	@IsNumber()
 	userIdx: number;

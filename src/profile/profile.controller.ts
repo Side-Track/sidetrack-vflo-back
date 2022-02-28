@@ -20,7 +20,7 @@ export class ProfileController {
 	createProfile(@GetUser() user, @Body() createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx
 		const requsetUserIdx = user.idx;
-		return this.profileService.explicitCreateProfile(requsetUserIdx, createProfileDto);
+		return this.profileService.createProfile(requsetUserIdx, createProfileDto);
 	}
 
 	@Post('/update_profile')

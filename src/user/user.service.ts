@@ -8,15 +8,12 @@ import { ResponseMessage } from 'src/response.message.enum';
 import { UserCredentialDto } from './dto/user-credential.dto';
 import { User } from '../entities/user/user.entity';
 import { UserRepository } from '../entities/user/user.repository';
+import { ProfileRepository } from 'src/entities/profile/profile.repository';
+import { CreateProfileDto } from 'src/profile/dto/create-profile.dto';
 
 @Injectable()
 export class UserService {
-	constructor(
-		private readonly userRepository: UserRepository,
-		// UserService 는 ProfileService 참조함. 순환참조 제거하기 위한 방법
-		@Inject(forwardRef(() => ProfileService))
-		private readonly profileService: ProfileService,
-	) {}
+	constructor(private readonly userRepository: UserRepository) {}
 
 	// 유저 찾기
 	async getUserByIdx(idx: number): Promise<User> {
@@ -35,9 +32,8 @@ export class UserService {
 	// 유저 만들기
 	async createUser(userCredentialDto: UserCredentialDto, emailVerification: EmailVerification): Promise<ResponseDto> {
 		const user: User = await this.userRepository.createUser(userCredentialDto, emailVerification);
-		const profile: Profile = await this.profileService.createProfile(user);
 
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, { user, profile });
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, { user });
 	}
 
 	// 임시 비밀번호 생성

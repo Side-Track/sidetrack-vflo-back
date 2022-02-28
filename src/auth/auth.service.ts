@@ -214,30 +214,14 @@ export class AuthService {
 		}
 
 		// 유저 만들기 transaction
-		let createdUser: User = undefined;
-		let createdProfile: Profile = undefined;
+		const createdUser: User = await this.userRepository.createUser(userCredentialDto, verifiedEmail);
 
-		// create a new query runner and connect
-		const queryRunner = this.connection.createQueryRunner();
-		await queryRunner.connect();
+		// 유저 프로필 만들기
+		let createProfileDto = new CreateProfileDto();
+		createProfileDto.nickname = userCredentialDto.email;
+		createProfileDto.bio = '';
 
-		// start transaction:
-		await queryRunner.startTransaction();
-
-		try {
-			createdUser = await this.userRepository.createUser(userCredentialDto, verifiedEmail);
-
-			let createProfileDto = new CreateProfileDto();
-			createProfileDto.nickname = userCredentialDto.email;
-			createProfileDto.bio = '';
-			createdProfile = await this.profileRepositoroy.createProfile(createdUser, createProfileDto);
-
-			await queryRunner.commitTransaction();
-		} catch (err) {
-			await queryRunner.rollbackTransaction();
-		} finally {
-			await queryRunner.release();
-		}
+		const createdProfile = await this.profileRepositoroy.createProfile(createdUser, createProfileDto);
 
 		// 프로필 만들기가 실패했을 경우, 명시적 생성을 하라는 플래그 내려줌
 		let responseData = {};

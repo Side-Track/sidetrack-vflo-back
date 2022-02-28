@@ -25,8 +25,7 @@ import { CreateProfileDto } from './dto/create-profile.dto';
 export class ProfileService {
 	constructor(
 		private readonly profileRepository: ProfileRepository,
-
-		private readonly userRepository: UserRepository,
+		private readonly userService: UserService, // private readonly userRepository: UserRepository,
 	) {}
 
 	// 닉네임 중복체크
@@ -80,7 +79,7 @@ export class ProfileService {
 	// 명시적 프로필 생성 (회원가입 시 자동생성 안할 경우 명시적으로 생성)
 	async explicitCreateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
+		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
 		// 유저 없으면 에러
 		if (!user) {
@@ -112,7 +111,7 @@ export class ProfileService {
 		tempProfileDto.nickname = undefined;
 
 		// 닉네임 이메일에서 가져옴
-		const nickname = user.email.split('@')[0];
+		const nickname = user.email;
 
 		// 이메일로 부터 가져온 닉네임을 중복검사 및 추천받음
 		const responseDto: ResponseDto = await this.checkDuplicateNickname(nickname, true);
@@ -139,7 +138,7 @@ export class ProfileService {
 	// 프로필 업데이트
 	async updateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
+		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
 		// 유저 없으면 리턴
 		if (!user) {

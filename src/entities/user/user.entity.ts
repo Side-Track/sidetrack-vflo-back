@@ -1,8 +1,11 @@
+import { EmailVerification } from 'src/entities/email_verification/email_verification.entity';
 import {
 	BaseEntity,
 	Column,
 	CreateDateColumn,
 	Entity,
+	JoinColumn,
+	OneToOne,
 	PrimaryGeneratedColumn,
 	Unique,
 	UpdateDateColumn,
@@ -20,11 +23,9 @@ export class User extends BaseEntity {
 	@Column()
 	password: string;
 
-	@Column({
-		type: 'boolean',
-		default: false,
-	})
-	email_verified: Boolean;
+	@OneToOne(() => EmailVerification)
+	@JoinColumn()
+	email_verification: EmailVerification;
 
 	@CreateDateColumn()
 	created_date: Date;

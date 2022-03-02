@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { ProfileModule } from './profile/profile.module';
 import { CommonsModule } from './commons/commons.module';
+import { UserModule } from './user/user.module';
 
 @Module({
 	imports: [
@@ -30,6 +31,7 @@ import { CommonsModule } from './commons/commons.module';
 		ConfigurationModule,
 		ProfileModule,
 		CommonsModule,
+		UserModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

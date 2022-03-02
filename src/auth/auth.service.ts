@@ -1,51 +1,40 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { forwardRef, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
-import { UserCredentialDto } from './dto/user-credential.dto';
-import { EmailVerificationRepository } from './repositories/email_verification.repository';
-import { User } from './entities/user.entity';
-import { UserRepository } from './repositories/user.repository';
+import { UserCredentialDto } from '../user/dto/user-credential.dto';
+import { EmailVerificationRepository } from '../entities/email_verification/email_verification.repository';
+import { User } from '../entities/user/user.entity';
 import { EmailVerificationDto } from './dto/email-verification.dto';
 
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { ResponseCode } from 'src/response.code.enum';
-import { EmailVerification } from './entities/email_verification.entity';
-import { Connection } from 'typeorm';
-import { ProfileService } from 'src/profile/profile.service';
-import { ProfileDto } from 'src/profile/dto/profile.dto';
-import { ProfileRepository } from 'src/profile/repositories/profile.repository';
-import { Profile } from 'src/profile/entities/profile.entity';
+import { EmailVerification } from '../entities/email_verification/email_verification.entity';
 import { ResponseMessage } from 'src/response.message.enum';
+import { SignInCredentialDto } from './dto/sign-in-credential.dto';
+import { UserRepository } from 'src/entities/user/user.repository';
+import { ProfileRepository } from 'src/entities/profile/profile.repository';
+import { Profile } from 'src/entities/profile/profile.entity';
+import { CreateProfileDto } from 'src/profile/dto/create-profile.dto';
+import { Connection, getConnection } from 'typeorm';
 
 @Injectable()
 export class AuthService {
-	// Cause : any method in repository occur 500 internal error.
-	// Solve : @InjectionRepository() 대신 커넥션을 이용해서 다음과 같이 정의하는 방법을 사용함.
-	private userRepository: UserRepository;
-	private emailVerficiationRepository: EmailVerificationRepository;
-	private profileRepository: ProfileRepository;
+	// @InjectRepository() 데코레이터는 기본 TypeOrm 기본 리포사용시에만 사용
+	// ex : private userRepository : Repository<User> 와 같이 엔티티 사용하여 쓸 때만 이용
+
+	// 현재와 같이 Repository 파일이 따로 존재 시에는 아래와 같이 하는게 좋다.
 	constructor(
-		private readonly connection: Connection,
+		private connection: Connection,
+
+		private emailVerficiationRepository: EmailVerificationRepository,
+
+		private readonly userRepository: UserRepository,
+		private readonly profileRepositoroy: ProfileRepository,
+
 		private readonly mailerService: MailerService,
 		private jwtService: JwtService,
-	) {
-		this.userRepository = this.connection.getCustomRepository(UserRepository);
-		this.emailVerficiationRepository = this.connection.getCustomRepository(EmailVerificationRepository);
-		this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
-	}
-
-	/* constructor(
-	// 	@InjectRepository(UserRepository)
-	// 	private userRepository: UserRepository,
-
-	// 	@InjectRepository(EmailVerificationRepository)
-	// 	private emailVerficiationRepository: EmailVerificationRepository,
-	//  private readonly mailerService: MailerService,
-	//	private jwtService: JwtService,
-	// ) {}
-	*/
+	) {}
 
 	// 중복 이메일 검사
 	async checkDuplicateEmail(email: string): Promise<ResponseDto> {
@@ -73,29 +62,29 @@ export class AuthService {
 
 	// 인증 메일 발송
 	async sendVerificationMail(email: string): Promise<ResponseDto> {
-		// 이미 인증받은 유저인지 검사
-		const user = await this.userRepository.findOne({ email: email });
+		// 이미 인증받은 이메일인지 검사
 		const verified = await this.emailVerficiationRepository.findVerifiedEmailVerificationByEmail(email);
 
-		// 이미 인증된 유저라면 response error return
-		if (user && user.email_verified && verified) {
+		// 이미 인증된 이메일이라면 response error return
+		if (verified != undefined) {
 			const response = new ResponseDto(
 				HttpStatus.OK,
 				ResponseCode.ALREADY_VERIFIED_EMAIL,
 				true,
 				ResponseMessage.ALREADY_VERIFIED_EMAIL,
-				{ verified: user.email_verified },
+				{ verified: verified },
 			);
 
 			throw new HttpException(response, HttpStatus.OK);
 		}
 
+		// 이메일 전송 응답객체
+		let sendedMail = undefined;
+
 		// 인증 받아야 한다면 : 가입은 되었으나 인증은 안된경우와 처음 인증하고 가입절차 밟는 경우
 		// 코드를 생성함
 		const verificationCode = await this.emailVerficiationRepository.createVerificationCode(email);
 
-		// 이메일 내용 작성
-		let sendedMail = undefined;
 		try {
 			sendedMail = await this.mailerService.sendMail({
 				to: email, // list of receivers
@@ -145,21 +134,45 @@ export class AuthService {
 	// 이메일 인증
 	async verifyEmail(emailVerificationDto: EmailVerificationDto): Promise<ResponseDto> {
 		// 이메일 인증하기
-		let verifyObject: EmailVerification = await this.emailVerficiationRepository.findAvailableEmailVerification(
+		let verifyObject: EmailVerification = await this.emailVerficiationRepository.findVerficationEmailCodePair(
 			emailVerificationDto,
 		);
 
 		// 검색된 결과가 있으면(발행했던 코드라면)
 		if (verifyObject != undefined) {
-			// verified_date update
-			verifyObject.verified_date = new Date();
-			await this.emailVerficiationRepository.save(verifyObject);
-			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '이메일 인증 성공');
+			// 만료 여부
+			const isExpired = verifyObject.expired_date < new Date() ? true : false;
+
+			// 만료되었을 경우
+			if (isExpired) {
+				return new ResponseDto(
+					HttpStatus.OK,
+					ResponseCode.EXPIRED_VERIFICATION_CODE,
+					true,
+					ResponseMessage.EXPIRED_VERIFICATION_CODE,
+					{ isExpired: true },
+				);
+			}
+
+			const queryRunner = this.connection.createQueryRunner();
+			await queryRunner.connect();
+
+			await queryRunner.startTransaction();
+			try {
+				// verified_date update
+				verifyObject.verified_date = new Date();
+				await this.emailVerficiationRepository.save(verifyObject);
+				return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '이메일 인증 성공');
+			} catch (error) {
+				await queryRunner.rollbackTransaction();
+			} finally {
+				queryRunner.release();
+			}
 		} else {
-			// 검색 결과 없으면
+			// 검색 결과 없으면 (해당 이메일에 대해 발행했던 코드가 아니라면)
 			throw new HttpException(
-				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, false, ResponseMessage.DATA_NOT_FOUND),
-				HttpStatus.NO_CONTENT,
+				new ResponseDto(HttpStatus.OK, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
+				HttpStatus.OK,
 			);
 		}
 	}
@@ -168,12 +181,27 @@ export class AuthService {
 	async signUp(userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
 		const { email } = userCredentialDto;
 
+		const existUser: User = await this.userRepository.findOne({ email: email });
+
 		// 인증받은 이메일인지 판단
 		const verifiedEmail: EmailVerification =
 			await this.emailVerficiationRepository.findVerifiedEmailVerificationByEmail(email);
 
+		// 이미 유저 존재함
+		if (existUser != undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.CONFLICT,
+					ResponseCode.ALREADY_REGISTERED_USER,
+					true,
+					ResponseMessage.ALREADY_REGISTERED_USER,
+				),
+				HttpStatus.CONFLICT,
+			);
+		}
+
 		// 인증받은 이메일이 아니라면(인증받은 이메일-코드 페어가 없으면)
-		if (!verifiedEmail) {
+		if (verifiedEmail == undefined) {
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.UNAUTHORIZED,
@@ -185,35 +213,32 @@ export class AuthService {
 			);
 		}
 
-		// 유저 만들기
-		const user: User = await this.userRepository.createUser(userCredentialDto);
+		// 유저 만들기 transaction
+		const createdUser: User = await this.userRepository.createUser(userCredentialDto, verifiedEmail);
 
-		// 유저 만들기가 모종의 이유로 실패 시
-		if (!user) {
-			throw new HttpException(
-				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
+		// 유저 프로필 만들기
+		let createProfileDto = new CreateProfileDto();
+		createProfileDto.nickname = userCredentialDto.email;
+		createProfileDto.bio = '';
 
-		const profile = await this.profileRepository.createProfile(user, new ProfileDto());
+		const createdProfile = await this.profileRepositoroy.createProfile(createdUser, createProfileDto);
 
-		// 프로필 자동생성이 모종의 이유로 실패 시
-		if (!profile) {
-			throw new HttpException(
-				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
+		// 프로필 만들기가 실패했을 경우, 명시적 생성을 하라는 플래그 내려줌
+		let responseData = {};
+		if (createdProfile == undefined) {
+			responseData['isProfileAutoGenerated'] = false;
+		} else {
+			responseData['isProfileAutoGenerated'] = true;
 		}
 
 		// 성공 시
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '회원가입이 완료되었습니다.');
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '회원가입이 완료되었습니다.', responseData);
 	}
 
 	// 로그인
-	async signIn(userCredentialDto: UserCredentialDto): Promise<ResponseDto> {
+	async signIn(signInCredentialDto: SignInCredentialDto): Promise<ResponseDto> {
 		// DTO 로 부터 데이터 받음
-		const { email, password } = userCredentialDto;
+		const { email, password } = signInCredentialDto;
 
 		// 받은 데이터 기준으로 db 검색
 		const user = await this.userRepository.findOne({ email: email });
@@ -237,11 +262,11 @@ export class AuthService {
 
 		if (passwordCompareResult) {
 			// 유저 토큰 생성
-			const { idx, email, email_verified, is_admin } = user;
+			const { idx, email, email_verification, is_admin } = user;
 			const payload = {
 				userIdx: idx,
 				email: email,
-				emailVerified: email_verified,
+				emailVerified: email_verification != undefined ? true : false,
 				isAdmin: is_admin,
 			};
 			const accessToken = await this.jwtService.sign(payload);
@@ -265,7 +290,7 @@ export class AuthService {
 	// 비밀번호 리셋
 	// TODO : 인증절차 거쳐야 할 듯
 	async resetPassword(email: string): Promise<ResponseDto> {
-		let user = await this.userRepository.findOne({ email });
+		let user = await this.userRepository.findOne({ email: email });
 
 		// 해당 이메일 계정이 없으면
 		if (user == undefined) {
@@ -277,12 +302,17 @@ export class AuthService {
 
 		// 계정이 있다면 ============
 
-		// 임시비밀번호 생성
-		const tempPassword = await this.userRepository.createTemporaryPassword(user);
+		let sendedMail = undefined; // 메일 응답 객체
 
-		// 이메일 내용 작성
-		let sendedMail = undefined;
+		// 트랜잭션 준비
+		const queryRunner = this.connection.createQueryRunner();
+		await queryRunner.connect();
+
+		// 트랜잭션 시작:
+		await queryRunner.startTransaction();
 		try {
+			const tempPassword = await this.userRepository.createTemporaryPassword(user);
+
 			sendedMail = await this.mailerService.sendMail({
 				to: email, // list of receivers
 				from: process.env.EMAIL_HOST, // sender address
@@ -290,21 +320,23 @@ export class AuthService {
 				text: '인증코드 : ' + tempPassword + '\n임시 비밀번호로 로그인 후 새 비밀번호로 변경하십시오', // plaintext body
 				// html: '<b>welcome</b>', // HTML body content
 			});
-		} catch (err) {
-			// 이메일 보낼 때 오류
-			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.MAILER_ERROR,
-					true,
-					ResponseMessage.MAILER_ERROR,
-				),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
 
-		// 이메일 응답객체 존재하지 않을 때
-		if (sendedMail == undefined) {
+			if (sendedMail == undefined) {
+				throw new HttpException(
+					new ResponseDto(
+						HttpStatus.INTERNAL_SERVER_ERROR,
+						ResponseCode.MAILER_ERROR,
+						true,
+						ResponseMessage.MAILER_ERROR,
+					),
+					HttpStatus.INTERNAL_SERVER_ERROR,
+				);
+			}
+
+			await queryRunner.commitTransaction();
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,
@@ -314,6 +346,8 @@ export class AuthService {
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
+		} finally {
+			await queryRunner.release();
 		}
 
 		// 메일전송 응답객체의 응답문

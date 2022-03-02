@@ -22,7 +22,7 @@ export class CommonsController {
 	constructor(private commonService: CommonsService) {}
 
 	@Post('/file_upload')
-	@UseGuards(AuthGuard)
+	@UseGuards(AuthGuard())
 	@UseInterceptors(
 		FilesInterceptor('file', 10, {
 			storage: multerS3({

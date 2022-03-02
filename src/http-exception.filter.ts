@@ -22,6 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 		// HttpException이 아니라면 ETC 예외처리
 		if (!(exception instanceof HttpException)) {
 			// exception = new InternalServerErrorException();
+			console.log(exception);
 			exception = new HttpException(
 				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
 				HttpStatus.INTERNAL_SERVER_ERROR,
@@ -37,10 +38,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			let errorString = response['error']; //error string
 
 			// errorString 을 resonseDto 에 넣기위해 컨벤션 맞추기
-			errorString = errorString.toUpperCase().replaceAll(' ', '_');
+			if (errorString) {
+				errorString = errorString.toUpperCase().replaceAll(' ', '_');
+			} else {
+				errorString = 'ERROR';
+			}
 
-			// 자동으로 던저진 에러의 메세지는 배열형식이므로 이것을 개행문자로 붙여줍니다.
-			const message = messageList.join('\n');
+			// 자동으로 던저진 에러의 메세지는 문자열 배열 또는 문자열 이므로 분기 후  개행문자로 붙여줍니다.
+			let message = undefined;
+			if (Array.isArray(messageList)) {
+				message = messageList.join('\n');
+			} else {
+				message = messageList;
+			}
 
 			// responseDto 의 데이터 영역에 기존 에러의 리스폰스 객체를 넣어서 원문을 확인 할 수 있도록 합니다.
 			const responseDto = new ResponseDto(statusCode, errorString, true, message, { response });
@@ -54,7 +64,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 			response,
 		};
 
-		Logger.error(log);
+		Logger.log(log);
 
 		res.status((exception as HttpException).getStatus()).json(response);
 	}

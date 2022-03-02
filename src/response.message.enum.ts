@@ -10,6 +10,7 @@ export enum ResponseMessage {
 	NOT_REGISTERED_USER = '존재하지 않는 계정입니다.',
 	UNAUTHORIZED_USER = '권한이 없습니다.',
 
+	EXPIRED_VERIFICATION_CODE = '만료된 인증코드입니다.',
 	ALREADY_VERIFIED_EMAIL = '이미 인증된 이메일입니다.',
 	NOT_VERIFIED_EMAIL = '인증되지 않은 이메일입니다.',
 	MAILER_ERROR = '메일 발송에 실패했습니다.',
@@ -18,7 +19,9 @@ export enum ResponseMessage {
 
 	// Profile
 	ALREADY_EXIST_NICKNAME = '이미 존재하는 닉네임입니다.',
+	ALREADY_USER_PROFILE_EXIST = '이미 유저의 프로필이 존재합니다.',
 
 	//Commons
 	ALREADY_EXIST_GENRE = '이미 존재하는 장르입니다.',
+	NOT_REGISTERED_GENRE = '존재하지 않는 장르입니다.',
 }

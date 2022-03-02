@@ -1,11 +1,12 @@
 import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
-import { User } from 'src/auth/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
-import { EntityRepository, Repository } from 'typeorm';
-import { ProfileDto } from '../dto/profile.dto';
-import { Profile } from '../entities/profile.entity';
+import { EntityRepository, getConnection, Repository } from 'typeorm';
+import { ProfileDto } from '../../profile/dto/profile.dto';
+import { Profile } from './profile.entity';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
+import { CreateProfileDto } from '../../profile/dto/create-profile.dto';
 
 @EntityRepository(Profile)
 export class ProfileRepository extends Repository<Profile> {
@@ -31,20 +32,55 @@ export class ProfileRepository extends Repository<Profile> {
 		return existNicknameMap;
 	}
 
-	async createProfile(user: User, profileDto: ProfileDto): Promise<Profile> {
+	async createProfile(user: User, createProfileDto: CreateProfileDto): Promise<Profile> {
 		// 요청에서 닉네임과 바이오 가져오기
-		let { nickname, bio } = profileDto;
+		let { nickname, bio } = createProfileDto;
 
-		// 닉네임이 비었을 경우 이메일에서 가져옴
-		nickname = nickname == undefined ? user.email.split('@')[0] : nickname;
+		// 닉네임 중복인지 확인
+		const count = await this.count({ nickname });
+		if (count > 0) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.CONFLICT,
+					ResponseCode.ALREADY_EXIST_NICKNAME,
+					true,
+					ResponseMessage.ALREADY_EXIST_NICKNAME,
+				),
+				HttpStatus.CONFLICT,
+			);
+		}
 
 		// 프로필 만들기
-		let profile = this.create({ user, nickname, bio });
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
 
+		await queryRunner.startTransaction();
 		try {
-			return await this.save(profile);
+			let profile = this.create({ user, nickname, bio });
+
+			const createdProfile = await this.save(profile);
+
+			await queryRunner.commitTransaction();
+
+			return createdProfile;
 		} catch (err) {
-			// 에러던지기
+			// rollback
+			await queryRunner.rollbackTransaction();
+
+			// 이미 같은것이 존재할 때 (Unique field 에 같은게 들어가려고 할 때)
+			if (err.code === 'ER_DUP_ENTRY') {
+				throw new HttpException(
+					new ResponseDto(
+						HttpStatus.CONFLICT,
+						ResponseCode.ALREADY_USER_PROFILE_EXIST,
+						true,
+						ResponseMessage.ALREADY_USER_PROFILE_EXIST,
+					),
+					HttpStatus.CONFLICT,
+				);
+			}
+
+			// 기타 에러
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,
@@ -54,12 +90,14 @@ export class ProfileRepository extends Repository<Profile> {
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
+		} finally {
+			await queryRunner.release();
 		}
 	}
 
-	async updateProfile(user: User, profileDto: ProfileDto): Promise<ResponseDto> {
+	async updateProfile(user: User, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 요청에서 닉네임과 바이오 가져오기
-		const { nickname, bio } = profileDto;
+		const { nickname, bio } = createProfileDto;
 
 		// 프로필 찾기
 		let profile = await this.findOne({ user: user });
@@ -79,20 +117,22 @@ export class ProfileRepository extends Repository<Profile> {
 		profile.nickname = nickname;
 		profile.bio = bio;
 
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
 		try {
 			profile = await this.save(profile);
 
+			await queryRunner.commitTransaction();
+
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 업데이트 되었습니다.', { profile });
 		} catch (err) {
-			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.INTERNAL_SERVER_ERROR,
-					true,
-					ResponseMessage.INTERNAL_SERVER_ERROR,
-				),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
+			// rollback
+			await queryRunner.rollbackTransaction();
+		} finally {
+			await queryRunner.release();
 		}
 	}
 

@@ -1,32 +1,32 @@
-import { HttpException, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { User } from 'src/auth/entities/user.entity';
-import { UserRepository } from 'src/auth/repositories/user.repository';
+import {
+	forwardRef,
+	HttpException,
+	HttpStatus,
+	Inject,
+	Injectable,
+	InternalServerErrorException,
+} from '@nestjs/common';
+import { User } from 'src/entities/user/user.entity';
+import { UserRepository } from 'src/entities/user/user.repository';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { ProfileDto } from './dto/profile.dto';
-import { ProfileRepository } from './repositories/profile.repository';
+import { ProfileRepository } from '../entities/profile/profile.repository';
 
 import { ResponseCode } from 'src/response.code.enum';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ResponseMessage } from 'src/response.message.enum';
+import { AuthService } from 'src/auth/auth.service';
+import { UserService } from 'src/user/user.service';
+import { Profile } from '../entities/profile/profile.entity';
+import { CreateProfileDto } from './dto/create-profile.dto';
 
 @Injectable()
 export class ProfileService {
-	// Repository DI
-	private userRepository: UserRepository;
-	private profileRepository: ProfileRepository;
-	constructor(private readonly connection: Connection) {
-		this.userRepository = this.connection.getCustomRepository(UserRepository);
-		this.profileRepository = this.connection.getCustomRepository(ProfileRepository);
-	}
-
-	// constructor(
-	// 	@InjectRepository(UserRepository)
-	// 	private userRepository: UserRepository,
-
-	// 	@InjectRepository(ProfileRepository)
-	// 	private profileRepository: ProfileRepository,
-	// ) {}
+	constructor(
+		private readonly profileRepository: ProfileRepository,
+		private readonly userService: UserService, // private readonly userRepository: UserRepository,
+	) {}
 
 	// 닉네임 중복체크
 	async checkDuplicateNickname(nickname: string, recommend: boolean): Promise<ResponseDto> {
@@ -50,6 +50,7 @@ export class ProfileService {
 			for (let i = 1; i <= 10; i++) {
 				let tempNickname = nickname + Math.floor(Math.random() * 101);
 
+				// 이미 추천 목록에 있거나, 존재하는 닉네임이 아니면 추천목록에 추가
 				if (!existNicknameObj[tempNickname] && !recommendList[tempNickname]) {
 					recommendList.push(tempNickname);
 				}
@@ -61,14 +62,12 @@ export class ProfileService {
 		// 사용불가능한 닉네임인 경우
 		if (existNicknameObj[nickname] != undefined) {
 			responseData['isUnique'] = false;
-			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.CONFLICT,
-					ResponseCode.ALREADY_EXIST_NICKNAME,
-					false,
-					ResponseMessage.ALREADY_EXIST_NICKNAME,
-				),
+			return new ResponseDto(
 				HttpStatus.CONFLICT,
+				ResponseCode.ALREADY_EXIST_NICKNAME,
+				false,
+				ResponseMessage.ALREADY_EXIST_NICKNAME,
+				responseData,
 			);
 		}
 
@@ -77,45 +76,51 @@ export class ProfileService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '사용가능한 닉네임입니다.', responseData);
 	}
 
-	// 프로필 생성
-	async createProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
-		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
+	// 프로필 생성 (회원가입 시 자동생성에 사용 중)
+	async createProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
+		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
-		// 유저 없으면 에러
-		if (!user) {
-			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.NOT_FOUND,
-					ResponseCode.NOT_REGISTERED_USER,
-					true,
-					ResponseMessage.NOT_REGISTERED_USER,
-				),
-				HttpStatus.NOT_FOUND,
-			);
+		// 프로필 DTO
+		let tempProfileDto: CreateProfileDto = undefined;
+
+		if (createProfileDto.nickname != undefined || createProfileDto.bio != undefined) {
+			tempProfileDto = createProfileDto;
+		} else {
+			tempProfileDto = new CreateProfileDto();
+
+			// 닉네임 이메일에서 가져옴
+			const nickname = user.email;
+
+			// 이메일로 부터 가져온 닉네임을 중복검사 및 추천받음
+			const responseDto: ResponseDto = await this.checkDuplicateNickname(nickname, true);
+			const isUnique: boolean = responseDto.data['isUnique'];
+			const recommendList: string[] = responseDto.data['recommendList'];
+
+			// 중복이 아니라면
+			if (isUnique) {
+				tempProfileDto.nickname = nickname;
+			} else {
+				// 중복이라면
+				// 추천 닉네임 배열을 검사
+				if (recommendList.length > 0) {
+					// 난수 인덱스를 만들되, 범위는 0 ~ 추천배열의 크기보다 1 작아야 함.
+					let randomIndex = Math.floor(Math.random() * recommendList.length);
+					// 추천 배열로 부터 임시 프로필 닉네임 지정
+					tempProfileDto.nickname = recommendList[randomIndex];
+				}
+			}
 		}
 
-		// 프로필 생성
-		const profile = await this.profileRepository.createProfile(user, profileDto);
+		const profile: Profile = await this.profileRepository.createProfile(user, tempProfileDto);
+		const profileDto: ProfileDto = new ProfileDto(profile.user.idx, profile.nickname, profile.bio);
 
-		// 생성 후 모종의 이유로 없으면 에러던짐
-		if (!profile) {
-			throw new HttpException(
-				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.ETC, true, ResponseMessage.ETC),
-				HttpStatus.INTERNAL_SERVER_ERROR,
-			);
-		}
-
-		// 프로필 리턴
-		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 성공적으로 생성되었습니다.', {
-			profile,
-		});
+		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'OK', profileDto);
 	}
 
 	// 프로필 업데이트
-	async updateProfile(requsetUserIdx: number, profileDto: ProfileDto): Promise<ResponseDto> {
+	async updateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
-		const user: User = await this.userRepository.findOne({ idx: requsetUserIdx });
+		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
 
 		// 유저 없으면 리턴
 		if (!user) {
@@ -130,6 +135,6 @@ export class ProfileService {
 			);
 		}
 
-		return await this.profileRepository.updateProfile(user, profileDto);
+		return await this.profileRepository.updateProfile(user, createProfileDto);
 	}
 }

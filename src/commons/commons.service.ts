@@ -1,17 +1,44 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ResponseDto } from 'src/dto/response.dto';
 import { Connection } from 'typeorm';
 import { GenreRepository } from '../entities/common_genre/genre.repository';
+import { UploadFileRepository } from 'src/entities/common_upload-file/upload_file.repository';
 import { ResponseCode } from 'src/response.code.enum';
 import { GenreDto } from './dto/genre.dto';
 import { User } from 'src/entities/user/user.entity';
 import { ResponseMessage } from 'src/response.message.enum';
+import * as multerS3 from 'multer-s3';
+import { v4 as uuid } from 'uuid';
+import { UploadFile } from 'src/entities/common_upload-file/upload_file.entity';
 
 @Injectable()
 export class CommonsService {
-	private genreRepository: GenreRepository;
-	constructor(private readonly connection: Connection) {
-		this.genreRepository = this.connection.getCustomRepository(GenreRepository);
+	constructor(
+		private readonly connection: Connection,
+		private readonly genreRepository: GenreRepository,
+		private readonly uploadFileRepository: UploadFileRepository,
+	) {}
+
+	async uploadFiles(files: multerS3.File[]): Promise<ResponseDto> {
+		const uploadfiles = [];
+		for (const element of files) {
+			const file = new UploadFile();
+			file.originalName = element.originalname;
+			file.mimeType = element.mimetype;
+			file.size = element.size;
+			file.url = element.location;
+
+			uploadfiles.push(file);
+		}
+
+		console.log(uploadfiles);
+
+		try {
+			const result = await this.uploadFileRepository.save(uploadfiles);
+			return new ResponseDto(HttpStatus.ACCEPTED, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, result);
+		} catch (error) {
+			throw new BadRequestException(error.message);
+		}
 	}
 
 	async getAllGenreList() {

@@ -398,3 +398,4 @@ Temporary Items
 .env.dev
 .env.test
 dist
+*.pem

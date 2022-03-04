@@ -5,6 +5,7 @@ import {
 	Inject,
 	Injectable,
 	InternalServerErrorException,
+	Logger,
 } from '@nestjs/common';
 import { User } from 'src/entities/user/user.entity';
 import { UserRepository } from 'src/entities/user/user.repository';
@@ -21,11 +22,16 @@ import { UserService } from 'src/user/user.service';
 import { Profile } from '../entities/profile/profile.entity';
 import { CreateProfileDto } from './dto/create-profile.dto';
 
+import * as multerS3 from 'multer-s3';
+import { UploadFile } from 'src/entities/common_upload-file/upload_file.entity';
+import { UploadFileRepository } from 'src/entities/common_upload-file/upload_file.repository';
+
 @Injectable()
 export class ProfileService {
 	constructor(
 		private readonly profileRepository: ProfileRepository,
 		private readonly userService: UserService, // private readonly userRepository: UserRepository,
+		private readonly uploadFileRepository: UploadFileRepository,
 	) {}
 
 	// 닉네임 중복체크
@@ -121,6 +127,8 @@ export class ProfileService {
 	async updateProfile(requsetUserIdx: number, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 토큰으로 부터 받은 유저 idx 로 유저 찾음
 		const user: User = await this.userService.getUserByIdx(requsetUserIdx);
+		const profileImage = createProfileDto.profileImage;
+		const nickname = createProfileDto.nickname;
 
 		// 유저 없으면 리턴
 		if (!user) {
@@ -135,6 +143,95 @@ export class ProfileService {
 			);
 		}
 
-		return await this.profileRepository.updateProfile(user, createProfileDto);
+		// 중복 닉네임
+		const duplicateNicknameCount = await this.profileRepository.count({ nickname });
+		if (duplicateNicknameCount > 0) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.ALREADY_EXIST_NICKNAME,
+					true,
+					ResponseMessage.ALREADY_EXIST_NICKNAME,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 프로필 이미지 파일 객체 매핑
+		let file = undefined;
+		if (profileImage != undefined) {
+			file = new UploadFile();
+			file.originalName = profileImage.originalname;
+			file.mimeType = profileImage.mimetype;
+			file.size = profileImage.size;
+			file.url = profileImage.location;
+		}
+
+		try {
+			// 프로필 이미지 저장
+			if (file != undefined) await this.uploadFileRepository.saveFile(file);
+
+			// 프로필 저장
+			return await this.profileRepository.updateProfile(user, createProfileDto);
+		} catch (err) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+					{ err },
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async updateProfileImage(user: User, profileImage: multerS3.File): Promise<ResponseDto> {
+		// 받은 이미지 파일로 엔티티 생성
+		const file = new UploadFile();
+		file.originalName = profileImage.originalname;
+		file.mimeType = profileImage.mimetype;
+		file.size = profileImage.size;
+		file.url = profileImage.location;
+
+		// user 객체 기반으로 프로필 불러옴
+		let profile: Profile = await this.profileRepository.findOne({ user });
+
+		// 프로필 없을 때 예외처리
+		if (!profile) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.PROFILE_NOT_EXIST,
+					true,
+					ResponseMessage.PROFILE_NOT_EXIST,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 프로필 이미지 url 을 프로필 객체에 매핑
+		profile.profile_image_url = file.url;
+
+		// 디비에 저장
+		try {
+			await this.uploadFileRepository.save(file);
+			profile = await this.profileRepository.save(profile);
+
+			Logger.log(`User ${user.idx} upload profile image`);
+			return new ResponseDto(HttpStatus.ACCEPTED, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, profile);
+		} catch (error) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					'profile image uploading has error',
+					error,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
 	}
 }

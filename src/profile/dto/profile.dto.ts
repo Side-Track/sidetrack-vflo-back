@@ -1,10 +1,12 @@
 import { IsNotEmpty, IsNumber, MaxLength } from 'class-validator';
 
 export class ProfileDto {
-	constructor(userIdx: number, nickname: string, bio: string) {
+	constructor(userIdx: number, nickname: string, bio: string, profileImageUrl?: string) {
 		this.userIdx = userIdx;
 		this.nickname = nickname;
 		this.bio = bio;
+
+		this.profileImageUrl = profileImageUrl == undefined ? '' : profileImageUrl;
 	}
 
 	@IsNotEmpty()
@@ -17,4 +19,6 @@ export class ProfileDto {
 
 	@MaxLength(150)
 	bio: string;
+
+	profileImageUrl: string;
 }

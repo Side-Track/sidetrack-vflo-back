@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
+import { HttpException, HttpStatus, InternalServerErrorException, Logger } from '@nestjs/common';
 import { User } from 'src/entities/user/user.entity';
 import { ResponseDto } from 'src/dto/response.dto';
 import { EntityRepository, getConnection, Repository } from 'typeorm';
@@ -7,6 +7,7 @@ import { Profile } from './profile.entity';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
 import { CreateProfileDto } from '../../profile/dto/create-profile.dto';
+import { UploadFile } from '../common_upload-file/upload_file.entity';
 
 @EntityRepository(Profile)
 export class ProfileRepository extends Repository<Profile> {
@@ -61,7 +62,7 @@ export class ProfileRepository extends Repository<Profile> {
 			const createdProfile = await this.save(profile);
 
 			await queryRunner.commitTransaction();
-
+			Logger.log(`User ${user.idx} upload profile generated`);
 			return createdProfile;
 		} catch (err) {
 			// rollback
@@ -97,25 +98,25 @@ export class ProfileRepository extends Repository<Profile> {
 
 	async updateProfile(user: User, createProfileDto: CreateProfileDto): Promise<ResponseDto> {
 		// 요청에서 닉네임과 바이오 가져오기
-		const { nickname, bio } = createProfileDto;
+		const { nickname, bio, profileImage } = createProfileDto;
 
 		// 프로필 찾기
 		let profile = await this.findOne({ user: user });
 
 		// 없으면 에러
 		if (!profile) {
-			// 없으면 생성해서 리턴
-			// const newProfile = this.createProfile(user, profileDto);
-			// return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, 'Profile is Updated!', {newProfile});
-
 			throw new HttpException(
 				new ResponseDto(HttpStatus.NO_CONTENT, ResponseCode.DATA_NOT_FOUND, true, ResponseMessage.DATA_NOT_FOUND),
 				HttpStatus.NOT_FOUND,
 			);
 		}
 
+		// 프로필 기본 정보 프로필 객체에 매핑
 		profile.nickname = nickname;
 		profile.bio = bio;
+		if (profileImage != undefined) {
+			profile.profile_image_url = profileImage.location;
+		}
 
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.connect();
@@ -127,10 +128,22 @@ export class ProfileRepository extends Repository<Profile> {
 
 			await queryRunner.commitTransaction();
 
+			// 로깅 및 리턴
+			Logger.log(`User ${user.idx} upload profile`);
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, '프로필이 업데이트 되었습니다.', { profile });
 		} catch (err) {
 			// rollback
 			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		} finally {
 			await queryRunner.release();
 		}

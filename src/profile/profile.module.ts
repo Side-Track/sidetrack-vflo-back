@@ -7,9 +7,10 @@ import { ProfileService } from './profile.service';
 import { UserModule } from 'src/user/user.module';
 import { UserRepository } from 'src/entities/user/user.repository';
 import { UserService } from 'src/user/user.service';
+import { UploadFileRepository } from 'src/entities/common_upload-file/upload_file.repository';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([ProfileRepository]), AuthModule, UserModule],
+	imports: [TypeOrmModule.forFeature([ProfileRepository, UploadFileRepository]), AuthModule, UserModule],
 	controllers: [ProfileController],
 	providers: [ProfileService],
 	exports: [ProfileService],

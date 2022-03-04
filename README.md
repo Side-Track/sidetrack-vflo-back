@@ -83,7 +83,7 @@ $ npm run test:cov
   ```bash
     $ vim(or vi) ~/.bashrc
   ```
-  다음과 같이 `.bashrc` 파일의 맨 밑에 export 문을 이용하여 환경변수를 생성해줍니다.
+  다음과 같이 `.bashrc` 파일의 맨 밑에 `export` 문을 이용하여 `.env` 파일에 있던 환경변수들을 생성해줍니다.
   ```bash
   # NestJS env list
   export DB_PORT=3306

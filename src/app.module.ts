@@ -8,6 +8,7 @@ import { ConfigurationModule } from './configuration/configuration.module';
 import { ProfileModule } from './profile/profile.module';
 import { CommonsModule } from './commons/commons.module';
 import { UserModule } from './user/user.module';
+import { StoryModule } from './story/story.module';
 
 @Module({
 	imports: [
@@ -32,6 +33,7 @@ import { UserModule } from './user/user.module';
 		ProfileModule,
 		CommonsModule,
 		UserModule,
+		StoryModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

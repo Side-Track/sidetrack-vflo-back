@@ -1,11 +1,41 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { ResponseDto } from 'src/dto/response.dto';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
+import { Model } from 'mongoose';
+import { Story } from './entities/story.entity';
+import { User } from 'src/entities/user/user.entity';
+import { CreateStoryDto } from './dto/create-stroy.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, getConnection } from 'typeorm';
+import { StoryGenrePair } from './entities/story-genere-pair.entity';
+import {Scene} from './entities/scene.entity';
+import {Script} from './entities/script.entity';
+import {Line} from './entities/line.entity';
+import {ChoiceObject} from './entities/choice-object.entity';
 
 @Injectable()
 export class StoryService {
-	constructor() {}
+	constructor(
+		@InjectRepository(Story)
+		private storyRepository: Repository<Story>,
+
+		@InjectRepository(StoryGenrePair)
+		private storyGenrePairRepository: Repository<StoryGenrePair>,
+
+		@InjectRepository(Scene)
+		private sceneRepository : Repository<Scene>,
+
+		@InjectRepository(Script)
+		private scriptRepository : Repository<Script>,
+
+		@InjectRepository(Line)
+		private lineRepository : Repository<Line>,
+
+		@InjectRepository(ChoiceObject)
+		private choiceObjectRepository : Repository<ChoiceObject>
+	) {}
 
 	getStory(id: number) {
 		const story = {
@@ -166,5 +196,26 @@ export class StoryService {
 		};
 
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, story);
+	}
+
+	async postStory(user: User, createStoryDto: CreateStoryDto): Promise<ResponseDto> {
+		
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
+		try{
+
+			const {title, description, genreList} = createStoryDto;
+			const story = this.storyRepository.create({title, description, author : user});
+			const createdStory = this.storyRepository.save(story);
+
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, createdStory);
+		} catch (err) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.INTERNAL_SERVER_ERROR, true, ResponseMessage.INTERNAL_SERVER_ERROR, err), HttpStatus.INTERNAL_SERVER_ERROR
+			);
+		}
 	}
 }

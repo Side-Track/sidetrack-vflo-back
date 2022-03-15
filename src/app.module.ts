@@ -9,6 +9,7 @@ import { ProfileModule } from './profile/profile.module';
 import { CommonsModule } from './commons/commons.module';
 import { UserModule } from './user/user.module';
 import { StoryModule } from './story/story.module';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
 	imports: [
@@ -22,6 +23,9 @@ import { StoryModule } from './story/story.module';
 			entities: [__dirname + '/**/*.entity.{js,ts}'],
 			synchronize: process.env.DB_SYNC === 'true',
 		}),
+		// MongooseModule.forRoot(
+		// 	process.env.MONGO_DB_URI_PREFIX + process.env.MONGO_DB_NAME + process.env.MONGO_DB_URI_SUFFIX,
+		// ),
 		MailerModule.forRoot({
 			transport: 'smtp://' + process.env.EMAIL_HOST + ':' + process.env.EMAIL_HOST_PASSWORD + '@smtp.gmail.com',
 			defaults: {

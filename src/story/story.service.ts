@@ -10,10 +10,10 @@ import { CreateStoryDto } from './dto/create-stroy.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, getConnection } from 'typeorm';
 import { StoryGenrePair } from './entities/story-genere-pair.entity';
-import {Scene} from './entities/scene.entity';
-import {Script} from './entities/script.entity';
-import {Line} from './entities/line.entity';
-import {ChoiceObject} from './entities/choice-object.entity';
+import { Scene } from './entities/scene.entity';
+import { Script } from './entities/script.entity';
+import { Line } from './entities/line.entity';
+import { ChoiceObject } from './entities/choice-object.entity';
 
 @Injectable()
 export class StoryService {
@@ -25,16 +25,16 @@ export class StoryService {
 		private storyGenrePairRepository: Repository<StoryGenrePair>,
 
 		@InjectRepository(Scene)
-		private sceneRepository : Repository<Scene>,
+		private sceneRepository: Repository<Scene>,
 
 		@InjectRepository(Script)
-		private scriptRepository : Repository<Script>,
+		private scriptRepository: Repository<Script>,
 
 		@InjectRepository(Line)
-		private lineRepository : Repository<Line>,
+		private lineRepository: Repository<Line>,
 
 		@InjectRepository(ChoiceObject)
-		private choiceObjectRepository : Repository<ChoiceObject>
+		private choiceObjectRepository: Repository<ChoiceObject>,
 	) {}
 
 	getStory(id: number) {
@@ -199,22 +199,27 @@ export class StoryService {
 	}
 
 	async postStory(user: User, createStoryDto: CreateStoryDto): Promise<ResponseDto> {
-		
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.connect();
 
 		await queryRunner.startTransaction();
 
-		try{
-
-			const {title, description, genreList} = createStoryDto;
-			const story = this.storyRepository.create({title, description, author : user});
+		try {
+			const { title, description, genreList } = createStoryDto;
+			const story = this.storyRepository.create({ title, description, author: user });
 			const createdStory = this.storyRepository.save(story);
 
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, createdStory);
 		} catch (err) {
 			throw new HttpException(
-				new ResponseDto(HttpStatus.INTERNAL_SERVER_ERROR, ResponseCode.INTERNAL_SERVER_ERROR, true, ResponseMessage.INTERNAL_SERVER_ERROR, err), HttpStatus.INTERNAL_SERVER_ERROR
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
 	}

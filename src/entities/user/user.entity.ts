@@ -1,10 +1,12 @@
 import { EmailVerification } from 'src/entities/email_verification/email_verification.entity';
+import { Story } from 'src/story/entities/story.entity';
 import {
 	BaseEntity,
 	Column,
 	CreateDateColumn,
 	Entity,
 	JoinColumn,
+	OneToMany,
 	OneToOne,
 	PrimaryGeneratedColumn,
 	Unique,
@@ -45,4 +47,7 @@ export class User extends BaseEntity {
 		default: false,
 	})
 	is_admin: boolean;
+
+	@OneToMany((type) => Story, (story) => story.author)
+	story_list: Story[];
 }

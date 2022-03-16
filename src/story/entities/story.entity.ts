@@ -5,14 +5,18 @@ import {
 	CreateDateColumn,
 	Entity,
 	JoinColumn,
+	ManyToOne,
 	OneToMany,
 	OneToOne,
 	PrimaryGeneratedColumn,
+	Unique,
 	UpdateDateColumn,
 } from 'typeorm';
 import { Scene } from './scene.entity';
+import { StoryGenrePair } from './story-genere-pair.entity';
 
 @Entity()
+@Unique(['title'])
 export class Story extends BaseEntity {
 	@PrimaryGeneratedColumn()
 	id: number;
@@ -23,8 +27,7 @@ export class Story extends BaseEntity {
 	@Column()
 	description: string;
 
-	@OneToOne(() => User)
-	@JoinColumn()
+	@ManyToOne((type) => User, (user) => user.story_list)
 	author: User;
 
 	@Column({ default: 0 })
@@ -43,8 +46,12 @@ export class Story extends BaseEntity {
 	scene_list: Scene[];
 
 	@CreateDateColumn()
-	created_date: number;
+	created_date: Date;
 
 	@Column()
-	last_update_date: number;
+	last_update_date: Date;
+
+	// for relations
+	@OneToMany((type) => StoryGenrePair, (storyGenrePair) => storyGenrePair.story)
+	story_genre_pair_list: StoryGenrePair[];
 }

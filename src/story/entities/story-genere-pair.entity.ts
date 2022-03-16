@@ -1,14 +1,16 @@
 import { Genre } from 'src/entities/common_genre/genre.entity';
-import { BaseEntity, Entity, JoinColumn, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Story } from './story.entity';
 
 @Entity()
 export class StoryGenrePair extends BaseEntity {
-	@OneToOne(() => Story, { primary: true })
-	@JoinColumn({ name: 'story_id' })
-	story_id: Story;
+	@PrimaryGeneratedColumn()
+	id: number;
 
-	@OneToOne(() => Genre, { primary: true })
-	@JoinColumn({ name: 'genre_id' })
-	genre_id: Genre;
+	// @PrimaryColumn()
+	@ManyToOne((type) => Story, (story) => story.story_genre_pair_list)
+	story: Story;
+	// @PrimaryColumn()
+	@ManyToOne((type) => Genre, (genre) => genre.story_genre_pair_list)
+	genre: Genre;
 }

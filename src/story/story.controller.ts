@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { User } from 'src/entities/user/user.entity';
 import { GetUser } from 'src/user/decorators/get-user.decorator';
-import { CreateStoryDto } from './dto/create-stroy.dto';
+import { CreateStoryDto } from './dto/create-story.dto';
 import { StoryService } from './story.service';
 
 @Controller('story')
@@ -18,7 +18,8 @@ export class StoryController {
 
 	@Post('/post_story')
 	@UseGuards(AuthGuard())
-	postStory(@GetUser() user: User, createStoryDto: CreateStoryDto): Promise<ResponseDto> {
+	postStory(@GetUser() user: User, @Body() createStoryDto: CreateStoryDto): Promise<ResponseDto> {
+		console.log(user, createStoryDto);
 		return this.storyService.postStory(user, createStoryDto);
 	}
 }

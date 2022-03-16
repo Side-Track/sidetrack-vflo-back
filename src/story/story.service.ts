@@ -6,7 +6,7 @@ import { ResponseMessage } from 'src/response.message.enum';
 import { Model } from 'mongoose';
 import { Story } from './entities/story.entity';
 import { User } from 'src/entities/user/user.entity';
-import { CreateStoryDto } from './dto/create-stroy.dto';
+import { CreateStoryDto } from './dto/create-story.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, getConnection } from 'typeorm';
 import { StoryGenrePair } from './entities/story-genere-pair.entity';
@@ -14,6 +14,8 @@ import { Scene } from './entities/scene.entity';
 import { Script } from './entities/script.entity';
 import { Line } from './entities/line.entity';
 import { ChoiceObject } from './entities/choice-object.entity';
+import { CommonsService } from 'src/commons/commons.service';
+import { Genre } from 'src/entities/common_genre/genre.entity';
 
 @Injectable()
 export class StoryService {
@@ -35,6 +37,8 @@ export class StoryService {
 
 		@InjectRepository(ChoiceObject)
 		private choiceObjectRepository: Repository<ChoiceObject>,
+
+		private readonly commonsService: CommonsService,
 	) {}
 
 	getStory(id: number) {
@@ -205,9 +209,30 @@ export class StoryService {
 		await queryRunner.startTransaction();
 
 		try {
+			// Dto 로 부터 필요한 정보 가져움
 			const { title, description, genreList } = createStoryDto;
-			const story = this.storyRepository.create({ title, description, author: user });
-			const createdStory = this.storyRepository.save(story);
+
+			// Story entity 생성
+			const story = this.storyRepository.create({ title, description, author: user, last_update_date: new Date() });
+			// Story 저장
+			const createdStory: Story = await this.storyRepository.save(story);
+
+			// 장르 리스트 가져오기
+			const selectedGenreList: Genre[] = await this.commonsService.getGenreListByIdList(genreList);
+
+			// 스토리-장르 엔티티 배열 생성
+			const storyGenreList: StoryGenrePair[] = [];
+			for (let i in selectedGenreList) {
+				storyGenreList.push(
+					this.storyGenrePairRepository.create({
+						story: createdStory,
+						genre: selectedGenreList[i],
+					}),
+				);
+			}
+
+			// 스토리-장르 엔티티 저장
+			const createdStoryGenrePairList = await this.storyGenrePairRepository.save(storyGenreList);
 
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, createdStory);
 		} catch (err) {

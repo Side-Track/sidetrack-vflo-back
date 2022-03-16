@@ -233,9 +233,11 @@ export class StoryService {
 
 			// 스토리-장르 엔티티 저장
 			const createdStoryGenrePairList = await this.storyGenrePairRepository.save(storyGenreList);
-
+			await queryRunner.commitTransaction();
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, createdStory);
 		} catch (err) {
+			await queryRunner.rollbackTransaction();
+
 			throw new HttpException(
 				new ResponseDto(
 					HttpStatus.INTERNAL_SERVER_ERROR,
@@ -246,6 +248,74 @@ export class StoryService {
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
+		} finally {
+			await queryRunner.release();
+		}
+	}
+
+	async updateStoryGenre(user: User, storyId: number, genreList: number[]): Promise<ResponseDto> {
+		const story: Story = await this.storyRepository.findOne({ id: storyId });
+
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseMessage.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
+		try {
+			// 기존 페어 모두 삭제
+			await this.storyGenrePairRepository.delete({ story });
+
+			// 장르 새로 받아옴
+			const selectedGenreList: Genre[] = await this.commonsService.getGenreListByIdList(genreList);
+
+			// 스토리-장르 엔티티 배열 생성
+			const storyGenreList: StoryGenrePair[] = [];
+			for (let i in selectedGenreList) {
+				storyGenreList.push(
+					this.storyGenrePairRepository.create({
+						story: story,
+						genre: selectedGenreList[i],
+					}),
+				);
+			}
+
+			// 스토리-장르 엔티티 저장
+			const createdStoryGenrePairList = await this.storyGenrePairRepository.save(storyGenreList);
+
+			// 스토리 마지막 수정일
+			story.last_update_date = new Date();
+			await this.storyRepository.save(story);
+
+			await queryRunner.commitTransaction();
+			return new ResponseDto(HttpStatus.ACCEPTED, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, {
+				createdStoryGenrePairList,
+			});
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		} finally {
+			await queryRunner.release();
 		}
 	}
 }

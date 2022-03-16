@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { User } from 'src/entities/user/user.entity';
@@ -19,7 +19,16 @@ export class StoryController {
 	@Post('/post_story')
 	@UseGuards(AuthGuard())
 	postStory(@GetUser() user: User, @Body() createStoryDto: CreateStoryDto): Promise<ResponseDto> {
-		console.log(user, createStoryDto);
 		return this.storyService.postStory(user, createStoryDto);
+	}
+
+	@Patch('/update_story_genre_list')
+	@UseGuards(AuthGuard())
+	updateStoryGenreList(
+		@GetUser() user: User,
+		@Body('story_id') storyId: number,
+		@Body('genre_list') genreList: number[],
+	): Promise<ResponseDto> {
+		return this.storyService.updateStoryGenre(user, storyId, genreList);
 	}
 }

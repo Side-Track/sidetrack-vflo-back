@@ -16,6 +16,7 @@ import { Line } from './entities/line.entity';
 import { ChoiceObject } from './entities/choice-object.entity';
 import { CommonsService } from 'src/commons/commons.service';
 import { Genre } from 'src/entities/common_genre/genre.entity';
+import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto';
 
 @Injectable()
 export class StoryService {
@@ -210,29 +211,33 @@ export class StoryService {
 
 		try {
 			// Dto 로 부터 필요한 정보 가져움
-			const { title, description, genreList } = createStoryDto;
+			const { title, description } = createStoryDto;
+			const genreList = createStoryDto.genre_list;
 
 			// Story entity 생성
 			const story = this.storyRepository.create({ title, description, author: user, last_update_date: new Date() });
 			// Story 저장
 			const createdStory: Story = await this.storyRepository.save(story);
 
-			// 장르 리스트 가져오기
-			const selectedGenreList: Genre[] = await this.commonsService.getGenreListByIdList(genreList);
+			// 스토리 생성 시 장르를 같이 설정한 경우
+			if (genreList != undefined || genreList.length > 0) {
+				// 장르 리스트 가져오기
+				const selectedGenreList: Genre[] = await this.commonsService.getGenreListByIdList(genreList);
 
-			// 스토리-장르 엔티티 배열 생성
-			const storyGenreList: StoryGenrePair[] = [];
-			for (let i in selectedGenreList) {
-				storyGenreList.push(
-					this.storyGenrePairRepository.create({
-						story: createdStory,
-						genre: selectedGenreList[i],
-					}),
-				);
+				// 스토리-장르 엔티티 배열 생성
+				const storyGenreList: StoryGenrePair[] = [];
+				for (let i in selectedGenreList) {
+					storyGenreList.push(
+						this.storyGenrePairRepository.create({
+							story: createdStory,
+							genre: selectedGenreList[i],
+						}),
+					);
+				}
+
+				// 스토리-장르 엔티티 저장
+				const createdStoryGenrePairList = await this.storyGenrePairRepository.save(storyGenreList);
 			}
-
-			// 스토리-장르 엔티티 저장
-			const createdStoryGenrePairList = await this.storyGenrePairRepository.save(storyGenreList);
 			await queryRunner.commitTransaction();
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, createdStory);
 		} catch (err) {
@@ -253,8 +258,12 @@ export class StoryService {
 		}
 	}
 
-	async updateStoryGenre(user: User, storyId: number, genreList: number[]): Promise<ResponseDto> {
-		const story: Story = await this.storyRepository.findOne({ id: storyId });
+	async updateStoryGenre(user: User, updateStoryGenrePairDto: UpdateStoryGenrePairDto): Promise<ResponseDto> {
+		const { storyId, genre_list } = updateStoryGenrePairDto;
+		const genreList = genre_list;
+
+		// ManyToOne 관계로 정립된 경우, Many쪽에서 One 쪽 엔티티 조인하여 찾을 때 relations 필드에 ManyToOne 컬럼명을 넣는다.
+		const story: Story = await this.storyRepository.findOne({ relations: ['author'], where: { id: storyId } });
 
 		if (!story) {
 			throw new HttpException(
@@ -265,6 +274,13 @@ export class StoryService {
 					ResponseMessage.NOT_REGISTERED_STORY,
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		if (story.author.idx != user.idx) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_STORY_AUTHOR, true, ResponseMessage.NOT_STORY_AUTHOR),
+				HttpStatus.UNAUTHORIZED,
 			);
 		}
 

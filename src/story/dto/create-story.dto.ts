@@ -1,4 +1,4 @@
-import { IsNotEmpty, MaxLength, MinLength } from 'class-validator';
+import { IsInt, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 
 export class CreateStoryDto {
 	@IsNotEmpty()
@@ -10,5 +10,6 @@ export class CreateStoryDto {
 	@MaxLength(255)
 	description: string;
 
-	genreList: number[];
+	@IsInt({ each: true })
+	genre_list: number[];
 }

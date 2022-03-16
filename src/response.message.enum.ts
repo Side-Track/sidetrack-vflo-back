@@ -32,4 +32,5 @@ export enum ResponseMessage {
 	// Story
 	ALREADY_EXIST_STORY = '이미 존재하는 스토리 입니다.',
 	NOT_REGISTERED_STORY = '존재하지 않는 스토리 입니다.',
+	NOT_STORY_AUTHOR = '스토리의 만든이가 아닙니다.',
 }

@@ -259,8 +259,8 @@ export class StoryService {
 	}
 
 	async updateStoryGenre(user: User, updateStoryGenrePairDto: UpdateStoryGenrePairDto): Promise<ResponseDto> {
-		const { storyId, genre_list } = updateStoryGenrePairDto;
-		const genreList = genre_list;
+		const genreList = updateStoryGenrePairDto.genre_list;
+		const storyId = updateStoryGenrePairDto.story_id;
 
 		// ManyToOne 관계로 정립된 경우, Many쪽에서 One 쪽 엔티티 조인하여 찾을 때 relations 필드에 ManyToOne 컬럼명을 넣는다.
 		const story: Story = await this.storyRepository.findOne({ relations: ['author'], where: { id: storyId } });

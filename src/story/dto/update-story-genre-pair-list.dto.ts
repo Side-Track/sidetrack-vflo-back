@@ -4,7 +4,7 @@ import { IsArray, IsInt, IsNotEmpty, IsNumber, MaxLength, MinLength, ValidateNes
 export class UpdateStoryGenrePairDto {
 	@IsNotEmpty()
 	@IsInt()
-	storyId: number;
+	story_id: number;
 
 	@IsNotEmpty()
 	@IsInt({ each: true })

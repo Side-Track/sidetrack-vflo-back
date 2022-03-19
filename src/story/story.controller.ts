@@ -22,7 +22,7 @@ export class StoryController {
 	@UseGuards(AuthGuard())
 	@UsePipes(ValidationPipe)
 	postStory(@GetUser() user: User, @Body() createStoryDto: CreateStoryDto): Promise<ResponseDto> {
-		return this.storyService.postStory(user, createStoryDto);
+		return this.storyService.createStory(user, createStoryDto);
 	}
 
 	@Patch('/update_story_genre_list')
@@ -38,7 +38,7 @@ export class StoryController {
 	@Post('/create_scene')
 	@UseGuards(AuthGuard())
 	createScene(@GetUser() user: User, @Body('storyId') storyId: number): Promise<ResponseDto> {
-		return this.storyService.insertScene(user, storyId);
+		return this.storyService.createScene(user, storyId);
 	}
 
 	@Post('/delete_scene')
@@ -50,6 +50,6 @@ export class StoryController {
 	@Post('/create_script')
 	@UseGuards(AuthGuard())
 	createScript(@GetUser() user: User, @Body() createScriptDto: CreateScriptDto): Promise<ResponseDto> {
-		return this.storyService.insertScript(user, createScriptDto);
+		return this.storyService.createScript(user, createScriptDto);
 	}
 }

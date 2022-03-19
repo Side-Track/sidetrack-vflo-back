@@ -204,7 +204,7 @@ export class StoryService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, story);
 	}
 
-	async postStory(user: User, createStoryDto: CreateStoryDto): Promise<ResponseDto> {
+	async createStory(user: User, createStoryDto: CreateStoryDto): Promise<ResponseDto> {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.connect();
 
@@ -336,13 +336,9 @@ export class StoryService {
 		}
 	}
 
-	async insertScene(user: User, storyId: number): Promise<ResponseDto> {
-		console.log(storyId);
-
+	async createScene(user: User, storyId: number): Promise<ResponseDto> {
 		// storyId 로 부터 스토리 가져옴
 		const story: Story = await this.storyRepository.findOne({ relations: ['author'], where: { id: storyId } });
-
-		console.log(story);
 
 		// 스토리 존재하지 않으면 throw
 		if (!story) {
@@ -450,15 +446,14 @@ export class StoryService {
 		}
 	}
 
-	async insertScript(user: User, createScriptDto: CreateScriptDto): Promise<ResponseDto> {
+	async createScript(user: User, createScriptDto: CreateScriptDto): Promise<ResponseDto> {
 		const sceneId = createScriptDto.sceneId;
 		const scene: Scene = await this.sceneRepository.findOne({
 			relations: ['story', 'story.author'],
 			where: { id: sceneId },
 		});
-		const story = scene.story;
 
-		console.log(scene);
+		const story = scene.story;
 
 		// scene 이 존재하지 않을 때
 		if (!scene) {

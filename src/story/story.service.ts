@@ -203,6 +203,7 @@ export class StoryService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, story);
 	}
 
+
 	async createStory(user: User, createStoryDto: CreateStoryDto): Promise<ResponseDto> {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.connect();
@@ -334,6 +335,7 @@ export class StoryService {
 			await queryRunner.release();
 		}
 	}
+
 
 	async createScene(user: User, storyId: number): Promise<ResponseDto> {
 		// storyId 로 부터 스토리 가져옴
@@ -561,6 +563,7 @@ export class StoryService {
 			relations: ['scene', 'scene.story', 'scene.story.author'],
 			where: { id: scriptId },
 		});
+    
 		if (!script) {
 			throw new HttpException(
 				new ResponseDto(

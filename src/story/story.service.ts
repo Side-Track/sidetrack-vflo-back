@@ -334,4 +334,46 @@ export class StoryService {
 			await queryRunner.release();
 		}
 	}
+
+	async insertScene(user: User, storyId: number): Promise<ResponseDto> {
+		// storyId 로 부터 스토리 가져옴
+		const story: Story = await this.storyRepository.findOne({ id: storyId });
+
+		// 스토리 존재하지 않으면 throw
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
+
+		try {
+			const scene = this.sceneRepository.create({ story });
+			const createdScene: Scene = await this.sceneRepository.save(scene);
+
+			await queryRunner.commitTransaction();
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseCode.SUCCESS, createdScene);
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
 }

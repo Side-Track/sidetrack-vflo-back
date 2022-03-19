@@ -511,6 +511,11 @@ export class StoryService {
 			const script = this.scriptRepository.create({ scene: scene, is_choice: isChoice });
 			const createdScript = await this.scriptRepository.save(script);
 
+			// 생성된 script 는 모든 외래키 조인되어 있기 때문에 조인 된 부분 제거하고 리턴
+			if (createdScript) {
+				delete createdScript.scene;
+			}
+
 			// 해당 스크립트가 선택형 스크립트일 경우
 
 			// 선택지 저장할 배열 선언
@@ -531,6 +536,14 @@ export class StoryService {
 				}
 
 				createdChoiceObjectList = await this.choiceObjectRepository.save(tempChoiceObjectList);
+
+				// createdChoiceObjectList 원소 내에 필요한 모든 부분을 조인해서 가져오기 때문에 조인된 부분 제거하고 리턴
+				if (createdChoiceObjectList.length > 0) {
+					for (let i in createdChoiceObjectList) {
+						let createChoiceObject = createdChoiceObjectList[i];
+						delete createChoiceObject.script;
+					}
+				}
 			}
 
 			// response

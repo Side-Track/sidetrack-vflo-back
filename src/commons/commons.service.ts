@@ -10,6 +10,7 @@ import { ResponseMessage } from 'src/response.message.enum';
 import * as multerS3 from 'multer-s3';
 import { v4 as uuid } from 'uuid';
 import { UploadFile } from 'src/entities/common_upload-file/upload_file.entity';
+import { Genre } from 'src/entities/common_genre/genre.entity';
 
 @Injectable()
 export class CommonsService {
@@ -106,5 +107,13 @@ export class CommonsService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, `create new genre : ${name}`, {
 			genre,
 		});
+	}
+
+	async getGenreListByIdList(idList: number[]): Promise<Genre[]> {
+		return await this.genreRepository.findByIds(idList);
+	}
+
+	async getGenreById(id: number): Promise<Genre> {
+		return await this.genreRepository.findOne({ id: id });
 	}
 }

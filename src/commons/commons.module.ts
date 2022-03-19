@@ -11,5 +11,6 @@ import { UploadFileRepository } from 'src/entities/common_upload-file/upload_fil
 	imports: [TypeOrmModule.forFeature([GenreRepository, UploadFileRepository]), AuthModule],
 	controllers: [CommonsController],
 	providers: [CommonsService],
+	exports: [CommonsService],
 })
 export class CommonsModule {}

@@ -1,4 +1,5 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { StoryGenrePair } from 'src/story/entities/story-genere-pair.entity';
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Genre extends BaseEntity {
@@ -7,4 +8,8 @@ export class Genre extends BaseEntity {
 
 	@Column()
 	name: string;
+
+	// for relations
+	@OneToMany((type) => StoryGenrePair, (storyGenrePair) => storyGenrePair.genre)
+	story_genre_pair_list: StoryGenrePair[];
 }

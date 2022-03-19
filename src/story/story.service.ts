@@ -17,6 +17,7 @@ import { ChoiceObject } from './entities/choice-object.entity';
 import { CommonsService } from 'src/commons/commons.service';
 import { Genre } from 'src/entities/common_genre/genre.entity';
 import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto';
+import { CreateScriptDto } from './dto/create-script.dto';
 
 @Injectable()
 export class StoryService {
@@ -336,8 +337,12 @@ export class StoryService {
 	}
 
 	async insertScene(user: User, storyId: number): Promise<ResponseDto> {
+		console.log(storyId);
+
 		// storyId 로 부터 스토리 가져옴
-		const story: Story = await this.storyRepository.findOne({ id: storyId });
+		const story: Story = await this.storyRepository.findOne({ relations: ['author'], where: { id: storyId } });
+
+		console.log(story);
 
 		// 스토리 존재하지 않으면 throw
 		if (!story) {
@@ -362,6 +367,177 @@ export class StoryService {
 
 			await queryRunner.commitTransaction();
 			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseCode.SUCCESS, createdScene);
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async deleteSecene(user: User, storyId: number, sceneId: number): Promise<ResponseDto> {
+		const scene: Scene = await this.sceneRepository.findOne({ relations: ['story'], where: { id: sceneId } });
+		const story = scene.story;
+
+		// scene 이 존재하지 않을 때
+		if (!scene) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseCode.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 스토리가 존재하지 않을 때
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 스토리의 저자가 아닐 때
+		if (story.author.idx != user.idx) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_STORY_AUTHOR,
+					true,
+					ResponseCode.NOT_STORY_AUTHOR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const queryRunner = getConnection().createQueryRunner();
+
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
+
+		try {
+			// Delete Scene
+			const result = await this.sceneRepository.delete({ id: sceneId });
+
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, result);
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async insertScript(user: User, createScriptDto: CreateScriptDto): Promise<ResponseDto> {
+		const sceneId = createScriptDto.sceneId;
+		const scene: Scene = await this.sceneRepository.findOne({
+			relations: ['story', 'story.author'],
+			where: { id: sceneId },
+		});
+		const story = scene.story;
+
+		console.log(scene);
+
+		// scene 이 존재하지 않을 때
+		if (!scene) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseCode.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 스토리가 존재하지 않을 때
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 스토리의 저자가 아닐 때
+		if (story.author.idx != user.idx) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_STORY_AUTHOR,
+					true,
+					ResponseCode.NOT_STORY_AUTHOR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const queryRunner = getConnection().createQueryRunner();
+
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
+
+		try {
+			const { isChoice, choiceObjectList } = createScriptDto;
+
+			// script 엔티티 생성 및 저장
+			const script = this.scriptRepository.create({ scene: scene, is_choice: isChoice });
+			const createdScript = await this.scriptRepository.save(script);
+
+			// 해당 스크립트가 선택형 스크립트일 경우
+
+			// 선택지 저장할 배열 선언
+			const tempChoiceObjectList: ChoiceObject[] = [];
+			let createdChoiceObjectList: ChoiceObject[] = [];
+			if (isChoice) {
+				// 선택지 엔티티 생성 및 저장
+				for (let i in choiceObjectList) {
+					const choiceObject = choiceObjectList[i];
+
+					tempChoiceObjectList.push(
+						this.choiceObjectRepository.create({
+							text: choiceObject.text,
+							linked_scene_id: choiceObject.linkedSceneId,
+							script: createdScript,
+						}),
+					);
+				}
+
+				createdChoiceObjectList = await this.choiceObjectRepository.save(tempChoiceObjectList);
+			}
+
+			// response
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, {
+				script: createdScript,
+				choiceObjectList: createdChoiceObjectList,
+			});
 		} catch (err) {
 			await queryRunner.rollbackTransaction();
 			throw new HttpException(

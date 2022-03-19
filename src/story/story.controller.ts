@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ResponseDto } from 'src/dto/response.dto';
 import { User } from 'src/entities/user/user.entity';
 import { GetUser } from 'src/user/decorators/get-user.decorator';
+import { CreateScriptDto } from './dto/create-script.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto';
 import { StoryService } from './story.service';
@@ -17,7 +18,7 @@ export class StoryController {
 		return this.storyService.getStory(id);
 	}
 
-	@Post('/post_story')
+	@Post('/create_story')
 	@UseGuards(AuthGuard())
 	@UsePipes(ValidationPipe)
 	postStory(@GetUser() user: User, @Body() createStoryDto: CreateStoryDto): Promise<ResponseDto> {
@@ -32,5 +33,23 @@ export class StoryController {
 		@Body() updateStoryGenrePairDto: UpdateStoryGenrePairDto,
 	): Promise<ResponseDto> {
 		return this.storyService.updateStoryGenre(user, updateStoryGenrePairDto);
+	}
+
+	@Post('/create_scene')
+	@UseGuards(AuthGuard())
+	createScene(@GetUser() user: User, @Body('storyId') storyId: number): Promise<ResponseDto> {
+		return this.storyService.insertScene(user, storyId);
+	}
+
+	@Post('/delete_scene')
+	@UseGuards(AuthGuard())
+	deleteScene(@GetUser() user: User, storyId: number, sceneId: number): Promise<ResponseDto> {
+		return this.storyService.deleteSecene(user, storyId, sceneId);
+	}
+
+	@Post('/create_script')
+	@UseGuards(AuthGuard())
+	createScript(@GetUser() user: User, @Body() createScriptDto: CreateScriptDto): Promise<ResponseDto> {
+		return this.storyService.insertScript(user, createScriptDto);
 	}
 }

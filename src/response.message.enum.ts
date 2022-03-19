@@ -36,4 +36,8 @@ export enum ResponseMessage {
 
 	//Scene
 	NOT_REGISTERED_SCENE = '존재하지 않는 장면입니다.',
+
+	//scipr
+	NOT_REGISTERED_SCRIPT = '존재하지 않는 스크립트입니다.',
+	NOT_CHOICEABLE_SCRIPT = '선택지를 삽입 할 수 없는 스크립트 입니다.',
 }

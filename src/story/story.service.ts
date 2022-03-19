@@ -1,14 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 import { ResponseDto } from 'src/dto/response.dto';
 import { ResponseCode } from 'src/response.code.enum';
 import { ResponseMessage } from 'src/response.message.enum';
-import { Model } from 'mongoose';
 import { Story } from './entities/story.entity';
 import { User } from 'src/entities/user/user.entity';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, getConnection } from 'typeorm';
+import { Repository, getConnection, In } from 'typeorm';
 import { StoryGenrePair } from './entities/story-genere-pair.entity';
 import { Scene } from './entities/scene.entity';
 import { Script } from './entities/script.entity';
@@ -18,6 +16,7 @@ import { CommonsService } from 'src/commons/commons.service';
 import { Genre } from 'src/entities/common_genre/genre.entity';
 import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto';
 import { CreateScriptDto } from './dto/create-script.dto';
+import { CreateChoiceObjectDto } from './dto/create-choice-object.dto';
 
 @Injectable()
 export class StoryService {
@@ -378,7 +377,7 @@ export class StoryService {
 		}
 	}
 
-	async deleteSecene(user: User, storyId: number, sceneId: number): Promise<ResponseDto> {
+	async deleteScene(user: User, storyId: number, sceneId: number): Promise<ResponseDto> {
 		const scene: Scene = await this.sceneRepository.findOne({ relations: ['story'], where: { id: sceneId } });
 		const story = scene.story;
 
@@ -411,13 +410,8 @@ export class StoryService {
 		// 스토리의 저자가 아닐 때
 		if (story.author.idx != user.idx) {
 			throw new HttpException(
-				new ResponseDto(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					ResponseCode.NOT_STORY_AUTHOR,
-					true,
-					ResponseCode.NOT_STORY_AUTHOR,
-				),
-				HttpStatus.INTERNAL_SERVER_ERROR,
+				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_STORY_AUTHOR, true, ResponseCode.NOT_STORY_AUTHOR),
+				HttpStatus.UNAUTHORIZED,
 			);
 		}
 
@@ -554,6 +548,245 @@ export class StoryService {
 					ResponseCode.INTERNAL_SERVER_ERROR,
 					true,
 					ResponseCode.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async deleteScript(user: User, storyId: number, sceneId: number, scriptId: number): Promise<ResponseDto> {
+		// 유효성 검사 로직
+		const script: Script = await this.scriptRepository.findOne({
+			relations: ['scene', 'scene.story', 'scene.story.author'],
+			where: { id: scriptId },
+		});
+		if (!script) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCRIPT,
+					true,
+					ResponseMessage.NOT_REGISTERED_SCRIPT,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const scene: Scene = script.scene;
+		if (scene == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseCode.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const story: Story = scene.story;
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const author = story.author;
+		if (author.idx != user.idx) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_STORY_AUTHOR, true, ResponseCode.NOT_STORY_AUTHOR),
+				HttpStatus.UNAUTHORIZED,
+			);
+		}
+
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
+		try {
+			const deleteInfo = await this.scriptRepository.delete({ id: scriptId });
+
+			await queryRunner.commitTransaction();
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, deleteInfo);
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async createChoiceObject(user: User, createChoiceObjectDto: CreateChoiceObjectDto): Promise<ResponseDto> {
+		const { scriptId, sceneId, storyId, choiceObjectList } = createChoiceObjectDto;
+
+		const script: Script = await this.scriptRepository.findOne({
+			relations: ['scene', 'scene.story', 'scene.story.author'],
+			where: { id: scriptId },
+		});
+
+		// script not defined
+		if (!script) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCRIPT,
+					true,
+					ResponseMessage.NOT_REGISTERED_SCRIPT,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// scene not defined
+		const scene: Scene = script.scene;
+		if (scene == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseCode.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+		// story not defined
+		const story: Story = scene.story;
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// author unauthorize
+		const author: User = story.author;
+		if (author.idx != user.idx) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_STORY_AUTHOR, true, ResponseCode.NOT_STORY_AUTHOR),
+				HttpStatus.UNAUTHORIZED,
+			);
+		}
+
+		// 선택지 생성 가능 스크립트가 아닐 떄
+		if (!script.is_choice) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_CHOICEABLE_SCRIPT,
+					true,
+					ResponseMessage.NOT_CHOICEABLE_SCRIPT,
+					{ script_id: scriptId, is_choice: script.is_choice },
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// 존재하지 않는 scene number를 링크 하려고 할 떄 ====
+		const linkedSceneIdList: number[] = [];
+		choiceObjectList.forEach((element) => {
+			linkedSceneIdList.push(element.linkedSceneId);
+		});
+
+		let linkedSceneList: Scene[] = await this.sceneRepository.find({ where: { id: In(linkedSceneIdList) } });
+
+		if (linkedSceneList.length <= 0) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseMessage.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const foundSceneIdList: number[] = [];
+		linkedSceneList.forEach((element) => {
+			foundSceneIdList.push(element.id);
+		});
+
+		linkedSceneIdList.sort();
+		foundSceneIdList.sort();
+
+		let difference = linkedSceneIdList.filter((x) => !foundSceneIdList.includes(x));
+
+		if (difference.length > 0) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseMessage.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// choice object Entity 생성 및 save
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
+		try {
+			const tempChoiceObjectList: ChoiceObject[] = [];
+			for (let i in choiceObjectList) {
+				const choiceObject = choiceObjectList[i];
+				tempChoiceObjectList.push(
+					this.choiceObjectRepository.create({
+						text: choiceObject.text,
+						linked_scene_id: choiceObject.linkedSceneId,
+						script: script,
+					}),
+				);
+			}
+
+			const createdChoiceObjectList = await this.choiceObjectRepository.save(tempChoiceObjectList);
+			await queryRunner.commitTransaction();
+
+			// auto join column delete
+			for (let i in createdChoiceObjectList) {
+				delete createdChoiceObjectList[i].script;
+			}
+
+			return new ResponseDto(
+				HttpStatus.OK,
+				ResponseCode.SUCCESS,
+				false,
+				ResponseMessage.SUCCESS,
+				createdChoiceObjectList,
+			);
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
 					err,
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,

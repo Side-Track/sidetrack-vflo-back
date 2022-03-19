@@ -1,13 +1,11 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { ChoiceObjectDto } from './choice-object.dto';
 
 export class CreateChoiceObjectDto {
-	@IsNotEmpty()
-	@IsString()
-	text: string;
-
-	@IsNotEmpty()
-	@IsNumber()
-	linkedSceneId: number;
+	@ValidateNested()
+	@Type(() => ChoiceObjectDto)
+	choiceObjectList: ChoiceObjectDto[];
 
 	@IsNotEmpty()
 	@IsNumber()

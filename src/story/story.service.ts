@@ -17,6 +17,7 @@ import { Genre } from 'src/entities/common_genre/genre.entity';
 import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto';
 import { CreateScriptDto } from './dto/create-script.dto';
 import { CreateChoiceObjectDto } from './dto/create-choice-object.dto';
+import { CreateLineDto } from './dto/create-line.dto';
 
 @Injectable()
 export class StoryService {
@@ -203,7 +204,6 @@ export class StoryService {
 		return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, story);
 	}
 
-
 	async createStory(user: User, createStoryDto: CreateStoryDto): Promise<ResponseDto> {
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.connect();
@@ -335,7 +335,6 @@ export class StoryService {
 			await queryRunner.release();
 		}
 	}
-
 
 	async createScene(user: User, storyId: number): Promise<ResponseDto> {
 		// storyId 로 부터 스토리 가져옴
@@ -563,7 +562,7 @@ export class StoryService {
 			relations: ['scene', 'scene.story', 'scene.story.author'],
 			where: { id: scriptId },
 		});
-    
+
 		if (!script) {
 			throw new HttpException(
 				new ResponseDto(
@@ -795,5 +794,42 @@ export class StoryService {
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
 		}
+	}
+
+	async createLine(user: User, createLineDto: CreateLineDto) {
+		const { storyId, sceneId, scriptId, text, isLinked } = createLineDto;
+
+		// Authorization
+		if (user == undefined) {
+		}
+
+		const script = await this.scriptRepository.findOne({
+			relations: ['scene', 'scene.story', 'scene.story.author'],
+			where: { id: scriptId },
+		});
+
+		if (script == undefined) {
+		}
+
+		const scene = script.scene;
+		if (scene == undefined) {
+		}
+
+		const story = scene.story;
+		if (story == undefined) {
+		}
+
+		const author = story.author;
+		if (author.idx != user.idx) {
+		}
+
+		// create entity
+		const line = this.lineRepository.create({ script: script, text: text });
+
+		// transaction
+
+		//try
+
+		// catch
 	}
 }

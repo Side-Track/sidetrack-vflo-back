@@ -796,7 +796,7 @@ export class StoryService {
 		}
 	}
 
-	async createLine(user: User, createLineDto: CreateLineDto) {
+	async createLine(user: User, createLineDto: CreateLineDto): Promise<ResponseDto> {
 		const { storyId, sceneId, scriptId, text, isLinked } = createLineDto;
 
 		// Authorization
@@ -809,27 +809,82 @@ export class StoryService {
 		});
 
 		if (script == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCRIPT,
+					true,
+					ResponseCode.NOT_REGISTERED_SCRIPT,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const scene = script.scene;
 		if (scene == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseCode.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const story = scene.story;
 		if (story == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const author = story.author;
 		if (author.idx != user.idx) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_STORY_AUTHOR, true, ResponseCode.NOT_STORY_AUTHOR),
+				HttpStatus.UNAUTHORIZED,
+			);
 		}
 
 		// create entity
 		const line = this.lineRepository.create({ script: script, text: text });
 
 		// transaction
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
 
 		//try
+		try {
+			const createdLine = await this.lineRepository.save(line);
+			await queryRunner.commitTransaction();
 
-		// catch
+			return new ResponseDto(HttpStatus.OK, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, { createdLine });
+		} catch (err) {
+			// catch
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+					err,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
 	}
+
+	async updateLine(user: User, lineId: number) {}
+
+	async deleteLine(user: User, lineId: number) {}
 }

@@ -93,7 +93,7 @@ $ npm run test:cov
 실행환경 세팅이 완료되면 로컬로 돌아와서 `scp` 명령을 이용해 빌드 된 dist 폴더를 옮겨줍니다.
 
 ```bash
-  $ scp -i ".pem file path" -r [옮기고 싶은 폴더] [username]@[host]:[서버 내 원하는 경로]
+  $ scp -r -i ".pem file path" [옮기고 싶은 폴더] [username]@[host]:[서버 내 원하는 경로]
 ```
 
 원격지에 접속해서 포트포워딩을 해주자 (80번을 NestJS 실행포트로)

@@ -809,25 +809,55 @@ export class StoryService {
 		});
 
 		if (script == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCRIPT,
+					true,
+					ResponseCode.NOT_REGISTERED_SCRIPT,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const scene = script.scene;
 		if (scene == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_SCENE,
+					true,
+					ResponseCode.NOT_REGISTERED_SCENE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const story = scene.story;
 		if (story == undefined) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
 		}
 
 		const author = story.author;
 		if (author.idx != user.idx) {
+			throw new HttpException(
+				new ResponseDto(HttpStatus.UNAUTHORIZED, ResponseCode.NOT_STORY_AUTHOR, true, ResponseCode.NOT_STORY_AUTHOR),
+				HttpStatus.UNAUTHORIZED,
+			);
 		}
 
 		// create entity
 		const line = this.lineRepository.create({ script: script, text: text });
 
 		// transaction
-
 		const queryRunner = getConnection().createQueryRunner();
 		await queryRunner.connect();
 		await queryRunner.startTransaction();
@@ -838,7 +868,7 @@ export class StoryService {
 
 			// delete all about joined datas
 			delete createdLine.script;
-			return new ResponseDto(HttpStatus.CREATED, ResponseCode.SUCCESS, true, ResponseMessage.SUCCESS, createdLine);
+			return new ResponseDto(HttpStatus.CREATED, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, createdLine);
 		} catch (err) {
 			// catch
 			await queryRunner.rollbackTransaction();

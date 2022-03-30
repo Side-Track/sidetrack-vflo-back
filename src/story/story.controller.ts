@@ -8,6 +8,7 @@ import { CreateChoiceObjectDto } from './dto/create-choice-object.dto';
 import { CreateLineDto } from './dto/create-line.dto';
 import { CreateScriptDto } from './dto/create-script.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
+import { UpdateLineDto } from './dto/update-line.dto';
 import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto';
 import { StoryService } from './story.service';
 
@@ -93,5 +94,11 @@ export class StoryController {
 	@UseGuards(AuthGuard())
 	deleteLine(@GetUser() user: User, @Body('lineId') lineId: number): Promise<ResponseDto> {
 		return this.storyService.deleteLine(user, lineId);
+	}
+
+	@Patch('/update_line')
+	@UseGuards(AuthGuard())
+	updateLine(@GetUser() user: User, @Body() updateLineDto: UpdateLineDto): Promise<ResponseDto> {
+		return this.storyService.updateLine(user, updateLineDto);
 	}
 }

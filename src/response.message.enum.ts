@@ -4,6 +4,7 @@ export enum ResponseMessage {
 	DATA_NOT_FOUND = '데이터가 존재하지 않습니다.',
 	ETC = '기타 에러 발생',
 	INTERNAL_SERVER_ERROR = '내부 서버 오류. 관리자에게 문의하세요',
+	OBJECT_IDENTIFIER_NOT_MATCHED = '객체 식별자가 다릅니다.',
 
 	// Auth
 	ALREADY_REGISTERED_USER = '이미 가입된 유저입니다.',

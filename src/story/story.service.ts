@@ -18,6 +18,7 @@ import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto'
 import { CreateScriptDto } from './dto/create-script.dto';
 import { CreateChoiceObjectDto } from './dto/create-choice-object.dto';
 import { CreateLineDto } from './dto/create-line.dto';
+import { UpdateLineDto } from './dto/update-line.dto';
 
 @Injectable()
 export class StoryService {
@@ -833,6 +834,18 @@ export class StoryService {
 			);
 		}
 
+		if (scene.id != sceneId) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.OBJECT_IDENTIFIER_NOT_MATCHED,
+					true,
+					ResponseCode.OBJECT_IDENTIFIER_NOT_MATCHED,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
 		const story = scene.story;
 		if (story == undefined) {
 			throw new HttpException(
@@ -841,6 +854,18 @@ export class StoryService {
 					ResponseCode.NOT_REGISTERED_STORY,
 					true,
 					ResponseCode.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		if (story.id != storyId) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.OBJECT_IDENTIFIER_NOT_MATCHED,
+					true,
+					ResponseCode.OBJECT_IDENTIFIER_NOT_MATCHED,
 				),
 				HttpStatus.INTERNAL_SERVER_ERROR,
 			);
@@ -855,7 +880,7 @@ export class StoryService {
 		}
 
 		// create entity
-		const line = this.lineRepository.create({ script: script, text: text });
+		const line = this.lineRepository.create({ script: script, text: text, is_lineked: isLinked });
 
 		// transaction
 		const queryRunner = getConnection().createQueryRunner();
@@ -885,6 +910,7 @@ export class StoryService {
 	}
 
 	async deleteLine(user: User, lineId: number): Promise<ResponseDto> {
+		// authorization
 		if (!user) {
 			throw new HttpException(
 				new ResponseDto(
@@ -952,6 +978,102 @@ export class StoryService {
 
 			await queryRunner.commitTransaction();
 			return new ResponseDto(HttpStatus.ACCEPTED, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, deleteResult);
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async updateLine(user: User, updateLineDto: UpdateLineDto): Promise<ResponseDto> {
+		// data parse from dto
+		const { id, text, isLinked } = updateLineDto;
+
+		// authoriztion
+		if (!user) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.UNAUTHORIZED,
+					ResponseCode.UNAUTHORIZED_USER,
+					true,
+					ResponseMessage.UNAUTHORIZED_USER,
+				),
+				HttpStatus.UNAUTHORIZED,
+			);
+		}
+
+		let line: Line = await this.lineRepository.findOne({
+			where: { id },
+			relations: ['script', 'script.scene', 'script.scene.story', 'script.scene.story.author'],
+		});
+
+		if (!line) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_LINE,
+					true,
+					ResponseMessage.NOT_REGISTERED_LINE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const story: Story = line.script.scene.story;
+		const author: User = story.author;
+
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseMessage.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		if (author.idx !== user.idx) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_STORY_AUTHOR,
+					true,
+					ResponseMessage.NOT_STORY_AUTHOR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// delete transaction start
+		const queryRunner = await getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
+		try {
+			delete line.script;
+
+			if (text != undefined) {
+				line.text = text;
+			}
+
+			if (isLinked != undefined) {
+				line.is_lineked = isLinked;
+			}
+
+			const updatedLine = await this.lineRepository.save(line);
+
+			await queryRunner.commitTransaction();
+			return new ResponseDto(HttpStatus.ACCEPTED, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, updatedLine);
 		} catch (err) {
 			await queryRunner.rollbackTransaction();
 			throw new HttpException(

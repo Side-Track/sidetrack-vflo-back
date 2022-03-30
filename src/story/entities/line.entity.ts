@@ -9,6 +9,9 @@ export class Line extends BaseEntity {
 	@Column()
 	text: string;
 
+	@Column()
+	is_lineked: boolean;
+
 	@ManyToOne((type) => Script, (script) => script.line_list)
 	script: Script;
 }

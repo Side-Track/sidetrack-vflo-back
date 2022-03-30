@@ -1,9 +1,11 @@
 import { Body, Controller, Delete, Get, Patch, Post, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { userInfo } from 'os';
 import { ResponseDto } from 'src/dto/response.dto';
 import { User } from 'src/entities/user/user.entity';
 import { GetUser } from 'src/user/decorators/get-user.decorator';
 import { CreateChoiceObjectDto } from './dto/create-choice-object.dto';
+import { CreateLineDto } from './dto/create-line.dto';
 import { CreateScriptDto } from './dto/create-script.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryGenrePairDto } from './dto/update-story-genre-pair-list.dto';
@@ -78,5 +80,18 @@ export class StoryController {
 		@Body() createChoiceObjectDto: CreateChoiceObjectDto,
 	): Promise<ResponseDto> {
 		return this.storyService.createChoiceObject(user, createChoiceObjectDto);
+	}
+
+	@Post('/create_line')
+	@UseGuards(AuthGuard())
+	@UsePipes(ValidationPipe)
+	createLine(@GetUser() user: User, @Body() createLineDto: CreateLineDto): Promise<ResponseDto> {
+		return this.storyService.createLine(user, createLineDto);
+	}
+
+	@Delete('/delete_line')
+	@UseGuards(AuthGuard())
+	deleteLine(@GetUser() user: User, @Body('lineId') lineId: number): Promise<ResponseDto> {
+		return this.storyService.deleteLine(user, lineId);
 	}
 }

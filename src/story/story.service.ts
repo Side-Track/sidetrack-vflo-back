@@ -796,7 +796,7 @@ export class StoryService {
 		}
 	}
 
-	async createLine(user: User, createLineDto: CreateLineDto) {
+	async createLine(user: User, createLineDto: CreateLineDto): Promise<ResponseDto> {
 		const { storyId, sceneId, scriptId, text, isLinked } = createLineDto;
 
 		// Authorization
@@ -828,8 +828,111 @@ export class StoryService {
 
 		// transaction
 
+		const queryRunner = getConnection().createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
 		//try
+		try {
+			let createdLine: Line = await this.lineRepository.save(line);
+			await queryRunner.commitTransaction();
 
-		// catch
+			// delete all about joined datas
+			delete createdLine.script;
+			return new ResponseDto(HttpStatus.CREATED, ResponseCode.SUCCESS, true, ResponseMessage.SUCCESS, createdLine);
+		} catch (err) {
+			// catch
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+	}
+
+	async deleteLine(user: User, lineId: number): Promise<ResponseDto> {
+		if (!user) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.UNAUTHORIZED,
+					ResponseCode.UNAUTHORIZED_USER,
+					true,
+					ResponseMessage.UNAUTHORIZED_USER,
+				),
+				HttpStatus.UNAUTHORIZED,
+			);
+		}
+
+		const line: Line = await this.lineRepository.findOne({
+			where: { id: lineId },
+			relations: ['script', 'script.scene', 'script.scene.story', 'script.scene.story.author'],
+		});
+
+		if (!line) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_LINE,
+					true,
+					ResponseMessage.NOT_REGISTERED_LINE,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		const story: Story = line.script.scene.story;
+		const author: User = story.author;
+
+		if (!story) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_REGISTERED_STORY,
+					true,
+					ResponseMessage.NOT_REGISTERED_STORY,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		if (author.idx !== user.idx) {
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.NOT_STORY_AUTHOR,
+					true,
+					ResponseMessage.NOT_STORY_AUTHOR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
+
+		// delete transaction start
+		const queryRunner = await getConnection().createQueryRunner();
+		await queryRunner.connect();
+
+		await queryRunner.startTransaction();
+
+		try {
+			const deleteResult = await this.lineRepository.delete({ id: lineId });
+
+			await queryRunner.commitTransaction();
+			return new ResponseDto(HttpStatus.ACCEPTED, ResponseCode.SUCCESS, false, ResponseMessage.SUCCESS, deleteResult);
+		} catch (err) {
+			await queryRunner.rollbackTransaction();
+			throw new HttpException(
+				new ResponseDto(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					ResponseCode.INTERNAL_SERVER_ERROR,
+					true,
+					ResponseMessage.INTERNAL_SERVER_ERROR,
+				),
+				HttpStatus.INTERNAL_SERVER_ERROR,
+			);
+		}
 	}
 }

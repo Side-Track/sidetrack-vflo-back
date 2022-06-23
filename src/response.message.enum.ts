@@ -4,6 +4,7 @@ export enum ResponseMessage {
 	DATA_NOT_FOUND = '데이터가 존재하지 않습니다.',
 	ETC = '기타 에러 발생',
 	INTERNAL_SERVER_ERROR = '내부 서버 오류. 관리자에게 문의하세요',
+	OBJECT_IDENTIFIER_NOT_MATCHED = '객체 식별자가 다릅니다.',
 
 	// Auth
 	ALREADY_REGISTERED_USER = '이미 가입된 유저입니다.',
@@ -34,10 +35,13 @@ export enum ResponseMessage {
 	NOT_REGISTERED_STORY = '존재하지 않는 스토리 입니다.',
 	NOT_STORY_AUTHOR = '스토리의 만든이가 아닙니다.',
 
-  //Scene
+	//Scene
 	NOT_REGISTERED_SCENE = '존재하지 않는 장면입니다.',
 
 	//scipr
 	NOT_REGISTERED_SCRIPT = '존재하지 않는 스크립트입니다.',
 	NOT_CHOICEABLE_SCRIPT = '선택지를 삽입 할 수 없는 스크립트 입니다.',
+
+	//line
+	NOT_REGISTERED_LINE = '존재하지 않는 라인입니다.',
 }
